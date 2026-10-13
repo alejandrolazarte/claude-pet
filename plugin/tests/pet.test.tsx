@@ -342,10 +342,10 @@ describe('pet', () => {
     expect(writes).toEqual([])
   })
 
-  test('a desktop Code tab session, not interactive but attended, opens the window and shows up in it', async ($, on) => {
+  test('a desktop Code tab session, not interactive at start, opens the window and shows up in it once the app attaches', async ($, on) => {
     // Arrange
     mock.clock(on, { now: 1000 })
-    mock.env(on, { TEMP: 'C:\\Temp', CLAUDE_CODE_SESSION_ATTENDED: '1' })
+    mock.env(on, { TEMP: 'C:\\Temp' })
     const launched: string[][] = []
     const writes: string[] = []
     on('session.start', (_$, e) => ({ cwd: e.cwd }))
@@ -361,10 +361,16 @@ describe('pet', () => {
       return { value: { exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
     })
 
+    on('session.attach', (_$, e) => ({ clientId: e.clientId }))
+
     // Act
     await $.session.start({ cwd: 'C:\\repos\\x', surface: null, isInteractive: false })
+    const beforeAttach = { launched: launched.length, writes: writes.length }
+    await $.session.attach({ surface: 'desktop', clientId: 'desktop:default' })
+    await $.session.attach({ surface: 'desktop', clientId: 'desktop:second' })
 
     // Assert
+    expect(beforeAttach).toEqual({ launched: 0, writes: 0 })
     expect(launched).toHaveLength(1)
     expect(writes).toEqual(['C:\\Temp\\claude-pet\\abc-123.json'])
   })
