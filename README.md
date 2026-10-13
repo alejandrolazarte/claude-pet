@@ -26,7 +26,7 @@ claude plugin uninstall pet@claude-pet
 
 ## Personajes
 
-Arranca con el **bicho blanco**. Para agregar otros, pedíselo a Claude Code, por ejemplo: *"agregá un personaje con la imagen goku.png de Descargas"*. Lo hace la skill `pet:add-character` del plugin: acepta SVG, PNG, GIF, WebP, JPEG o un video WebM/MP4, le saca el fondo, calcula el recorte y lo deja en `%LOCALAPPDATA%\claude-pet\characters\<id>\`. Aparece en el menú del clic derecho (**Personaje**) sin reabrir la ventana. Para que además mueva partes sueltas (colas, orejas, brazos), pedile *"animá las colas del personaje"*: lo hace la skill `pet:animate-character`. Ver [`overlay/README.md`](overlay/README.md#personajes).
+Arranca con el **bicho blanco**. Para agregar otros, pedíselo a Claude Code, por ejemplo: *"agregá un personaje con la imagen goku.png de Descargas"*. Lo hace la skill `pet:add-character` del plugin: acepta SVG, PNG, GIF, WebP, JPEG o un video WebM/MP4, le saca el fondo, calcula el recorte y lo deja en `%LOCALAPPDATA%\claude-pet\characters\<id>\`. Aparece en el menú del clic derecho (**Personaje**) sin reabrir la ventana. Para que además mueva partes sueltas (colas, orejas, brazos), pedile *"animá las colas del personaje"*: lo hace la skill `pet:animate-character`. Para que suene cuando Claude termina una tarea, dejá un `done.mp3` o `done.wav` en su carpeta (se apaga desde el menú: **Sonido**). Ver [`overlay/README.md`](overlay/README.md#personajes).
 
 Los personajes son de cada usuario: no viajan en el plugin ni en el repo.
 

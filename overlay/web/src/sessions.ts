@@ -41,6 +41,11 @@ export function moodDelayMs(shown: Mood, next: Mood): number {
   return next === 'thinking' && (shown === 'working' || shown === 'browsing') ? 2000 : 0
 }
 
+// A session the window had not seen yet (as when it opens) does not count: only a change to happy is a finish.
+export function finishedTask(previous: Readonly<Record<string, Session['mood']>>, sessions: readonly Session[]): boolean {
+  return sessions.some(s => s.mood === 'happy' && previous[s.sessionId] !== undefined && previous[s.sessionId] !== 'happy')
+}
+
 export function captionOf(session: Session, mode: CaptionMode): string {
   return mode === 'title' && session.title?.trim() ? session.title : session.repo
 }

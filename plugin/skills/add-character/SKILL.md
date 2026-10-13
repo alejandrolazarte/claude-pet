@@ -1,6 +1,6 @@
 ---
 name: add-character
-description: Agrega un personaje a la ventana flotante de claude-pet a partir de una imagen (SVG, PNG, GIF, WebP o JPEG) o un video (WebM o MP4), lo saca de la lista o lo renombra. Usar cuando el usuario pida "agregá este personaje", "quiero otro bicho", "poné este sticker/GIF de mascota", "cambiá el nombre del personaje" o "sacá el personaje X".
+description: Agrega un personaje a la ventana flotante de claude-pet a partir de una imagen (SVG, PNG, GIF, WebP o JPEG) o un video (WebM o MP4), lo saca de la lista o lo renombra. Usar cuando el usuario pida "agregá este personaje", "quiero otro bicho", "poné este sticker/GIF de mascota", "cambiá el nombre del personaje", "ponele este sonido" o "sacá el personaje X".
 ---
 
 # Agregar un personaje a claude-pet
@@ -46,6 +46,10 @@ La ventana vigila esa carpeta: un personaje nuevo aparece en el menú del clic d
 7. **Revisar el tamaño.** Si `bytes` pasa de 4 MB (4194304), la ventana ignora el personaje. Pedile al usuario una imagen más chica.
 8. **Contarle al usuario** que ya puede elegirlo con clic derecho sobre el bicho → **Personaje** → el nombre. Si `removedBackground` es `true`, avisale que se quitó un fondo; si la imagen se ve cortada o con un borde raro, ajustá el `viewBox` en `character.json` (agrandándolo) y la ventana se actualiza sola. Si el personaje es casi todo negro u oscuro, ofrecele un borde claro que sigue la silueta, para que se vea sobre un escritorio oscuro. Para un video o una imagen fija, volvé a correr el script con `-Outline`: pinta el borde en los cuadros una sola vez. Para un SVG, agregá `"outline": true` a `character.json`; ese borde lo calcula la ventana en cada cuadro y gasta bastante CPU si el personaje está animado.
 9. **Ofrecer animar partes.** Si el personaje tiene colas, orejas, brazos o alas, ofrecé moverlas por separado con la skill `animate-character`.
+
+## Sonido al terminar
+
+Un personaje puede sonar cuando una sesión de Claude termina una tarea (pasa a listo). Copiá el audio del usuario a `%LOCALAPPDATA%\claude-pet\characters\<id>\done.mp3` o `done.wav`, hasta 4 MB; otro formato hay que convertirlo antes. El mismo aviso de copyright vale para el audio. La ventana lo toma en el próximo final, sin reabrirla. Para silenciarlo: clic derecho → **Sonido**. Para sacarlo, borrá el archivo.
 
 ## Sacar o renombrar un personaje
 

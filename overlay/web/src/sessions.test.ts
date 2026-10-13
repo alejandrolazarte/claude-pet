@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { busiest, captionOf, moodDelayMs, STALE_MS, visibleSessions, type Session } from './sessions'
+import { busiest, captionOf, finishedTask, moodDelayMs, STALE_MS, visibleSessions, type Session } from './sessions'
 
 const NOW = 10 * STALE_MS
 
@@ -198,5 +198,65 @@ describe('moodDelayMs', () => {
 
     // Assert
     expect(delays).toEqual([0, 0, 0, 0, 0, 0])
+  })
+})
+
+describe('finishedTask', () => {
+  it('tells when a session goes from doing something to done', () => {
+    // Arrange
+    const previous = { a: 'working' } as const
+
+    // Act
+    const finished = finishedTask(previous, [session({ sessionId: 'a', mood: 'happy' })])
+
+    // Assert
+    expect(finished).toBe(true)
+  })
+
+  it('stays quiet while a session is still done, since the window resends the same sessions', () => {
+    // Arrange
+    const previous = { a: 'happy' } as const
+
+    // Act
+    const finished = finishedTask(previous, [session({ sessionId: 'a', mood: 'happy' })])
+
+    // Assert
+    expect(finished).toBe(false)
+  })
+
+  it('stays quiet for a session it has not seen before, as when the window opens', () => {
+    // Act
+    const finished = finishedTask({}, [session({ sessionId: 'a', mood: 'happy' })])
+
+    // Assert
+    expect(finished).toBe(false)
+  })
+
+  it('gives a single answer when several sessions finish together', () => {
+    // Arrange
+    const previous = { a: 'working', b: 'thinking' } as const
+    const sessions = [session({ sessionId: 'a', mood: 'happy' }), session({ sessionId: 'b', mood: 'happy' })]
+
+    // Act
+    const finished = finishedTask(previous, sessions)
+
+    // Assert
+    expect(finished).toBe(true)
+  })
+
+  it('ignores sessions that closed, failed or started something else', () => {
+    // Arrange
+    const previous = { a: 'working', b: 'working', c: 'happy' } as const
+    const sessions = [
+      session({ sessionId: 'a', mood: 'gone' }),
+      session({ sessionId: 'b', mood: 'sad' }),
+      session({ sessionId: 'c', mood: 'thinking' }),
+    ]
+
+    // Act
+    const finished = finishedTask(previous, sessions)
+
+    // Assert
+    expect(finished).toBe(false)
   })
 })

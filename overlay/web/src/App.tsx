@@ -4,7 +4,7 @@ import { onHostMessage, send } from './bridge'
 import { availableCharacters, resolveCharacter, scaleOf } from './characters'
 import { Pet, type Art } from './Pet'
 import { genericArt } from './Generic'
-import { busiest, captionOf, moodDelayMs, visibleSessions, type CaptionMode, type Mood, type Session } from './sessions'
+import { busiest, captionOf, finishedTask, moodDelayMs, visibleSessions, type CaptionMode, type Mood, type Session } from './sessions'
 
 export function App() {
   const [sessions, setSessions] = useState<Session[]>([])
@@ -16,6 +16,7 @@ export function App() {
   const [caption, setCaption] = useState<CaptionMode>('repo')
   const [sizes, setSizes] = useState<Record<string, unknown> | null>(null)
   const pets = useRef<HTMLDivElement>(null)
+  const moods = useRef<Record<string, Session['mood']>>({})
 
   useEffect(() => {
     const stop = onHostMessage(message => {
@@ -75,6 +76,13 @@ export function App() {
 
     return () => clearTimeout(timer)
   }, [liveMood, mood])
+
+  useEffect(() => {
+    if (finishedTask(moods.current, sessions)) {
+      send({ type: 'done', character })
+    }
+    moods.current = Object.fromEntries(sessions.map(s => [s.sessionId, s.mood]))
+  }, [sessions])
 
   return (
     <div

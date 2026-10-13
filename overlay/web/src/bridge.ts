@@ -14,6 +14,7 @@ export type PageMessage =
   | { type: 'drag' }
   | { type: 'menu'; characters: Character[]; current: CharacterId; caption: CaptionMode }
   | { type: 'size'; width: number; height: number }
+  | { type: 'done'; character: CharacterId }
 
 type WebView = {
   postMessage: (message: PageMessage) => void
