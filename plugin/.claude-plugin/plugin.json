@@ -1,0 +1,6 @@
+{
+  "name": "pet",
+  "version": "0.1.0",
+  "description": "A little blob above the prompt that reacts to what Claude is doing",
+  "types": "./types/index.d.ts"
+}

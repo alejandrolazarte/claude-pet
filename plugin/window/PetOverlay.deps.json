@@ -1,0 +1,101 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0/win-x64",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {},
+    ".NETCoreApp,Version=v10.0/win-x64": {
+      "PetOverlay/1.0.0": {
+        "dependencies": {
+          "Microsoft.Web.WebView2": "1.0.2957.106",
+          "Microsoft.Web.WebView2.Core": "1.0.2957.106",
+          "Microsoft.Web.WebView2.WinForms": "1.0.2957.106",
+          "Microsoft.Web.WebView2.Wpf": "1.0.2957.106",
+          "runtimepack.Microsoft.Windows.SDK.NET.Ref": "10.0.17763.57"
+        },
+        "runtime": {
+          "PetOverlay.dll": {}
+        }
+      },
+      "runtimepack.Microsoft.Windows.SDK.NET.Ref/10.0.17763.57": {
+        "runtime": {
+          "Microsoft.Windows.SDK.NET.dll": {
+            "assemblyVersion": "10.0.17763.38",
+            "fileVersion": "10.0.17763.55"
+          },
+          "WinRT.Runtime.dll": {
+            "assemblyVersion": "2.2.0.0",
+            "fileVersion": "2.2.0.48161"
+          }
+        }
+      },
+      "Microsoft.Web.WebView2/1.0.2957.106": {
+        "native": {
+          "runtimes/win-x64/native/WebView2Loader.dll": {
+            "fileVersion": "1.0.2957.106"
+          }
+        }
+      },
+      "Microsoft.Web.WebView2.Core/1.0.2957.106": {
+        "runtime": {
+          "Microsoft.Web.WebView2.Core.dll": {
+            "assemblyVersion": "1.0.2957.106",
+            "fileVersion": "1.0.2957.106"
+          }
+        }
+      },
+      "Microsoft.Web.WebView2.WinForms/1.0.2957.106": {
+        "runtime": {
+          "Microsoft.Web.WebView2.WinForms.dll": {
+            "assemblyVersion": "1.0.2957.106",
+            "fileVersion": "1.0.2957.106"
+          }
+        }
+      },
+      "Microsoft.Web.WebView2.Wpf/1.0.2957.106": {
+        "runtime": {
+          "Microsoft.Web.WebView2.Wpf.dll": {
+            "assemblyVersion": "1.0.2957.106",
+            "fileVersion": "1.0.2957.106"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "PetOverlay/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "runtimepack.Microsoft.Windows.SDK.NET.Ref/10.0.17763.57": {
+      "type": "runtimepack",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Microsoft.Web.WebView2/1.0.2957.106": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-eHc2yKD//d1a6Razu6jl373RGKdzLhxDBk/wc/i//tC9+nEVXcO38pvjZwR2s0C34y+0trzKvbGHffrEx7vyVw==",
+      "path": "microsoft.web.webview2/1.0.2957.106",
+      "hashPath": "microsoft.web.webview2.1.0.2957.106.nupkg.sha512"
+    },
+    "Microsoft.Web.WebView2.Core/1.0.2957.106": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Microsoft.Web.WebView2.WinForms/1.0.2957.106": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Microsoft.Web.WebView2.Wpf/1.0.2957.106": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

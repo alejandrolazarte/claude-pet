@@ -1,0 +1,5 @@
+overlay/web/node_modules/
+overlay/web/dist/
+overlay/bin/
+overlay/obj/
+*.tsbuildinfo
