@@ -56,18 +56,30 @@ async function rest($: EngineInterface) {
   timer = $.clock.after(SLEEP_AFTER_MS, () => void set($, { mood: 'sleeping', label: 'durmiendo' }))
 }
 
+async function watch($: EngineInterface) {
+  isWatched = true
+  await rest($)
+  const shipped = `${$.plugin.root.replaceAll('/', '\\')}\\window\\PetOverlay.exe`
+  const overlay = (await $.env.get('CLAUDE_PET_OVERLAY')) ?? shipped
+  if (await $.fs.exists(overlay).catch(() => false)) {
+    await $.process.run(['cmd.exe', '/c', 'start', '', overlay]).catch(() => undefined)
+  }
+}
+
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
-    // The desktop Code tab starts its sessions through the SDK: not interactive, but attended by a person.
-    isWatched = e.isInteractive || (await $.env.get('CLAUDE_CODE_SESSION_ATTENDED')) === '1'
-    await rest($)
-    if (!isWatched) {
-      return next(e)
+    isWatched = false
+    if (e.isInteractive) {
+      await watch($)
     }
-    const shipped = `${$.plugin.root.replaceAll('/', '\\')}\\window\\PetOverlay.exe`
-    const overlay = (await $.env.get('CLAUDE_PET_OVERLAY')) ?? shipped
-    if (await $.fs.exists(overlay).catch(() => false)) {
-      await $.process.run(['cmd.exe', '/c', 'start', '', overlay]).catch(() => undefined)
+
+    return next(e)
+  })
+
+  // The desktop Code tab starts its sessions through the SDK, not interactive: it is watched once the app attaches.
+  on('session.attach', async ($, e, next) => {
+    if (!isWatched) {
+      await watch($)
     }
 
     return next(e)
