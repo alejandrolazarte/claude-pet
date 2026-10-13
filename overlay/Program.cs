@@ -28,6 +28,8 @@ public static class Program
     private static readonly string _settingsFile = Path.Combine(_settingsFolder, "settings.json");
     private static readonly string _charactersFolder = Path.Combine(_settingsFolder, "characters");
     private const long _maxArtBytes = 4 * 1024 * 1024;
+    private const long _maxSoundBytes = 4 * 1024 * 1024;
+    private static readonly string[] _soundFiles = ["done.mp3", "done.wav"];
     // The folder name becomes the character's id in the menu and in settings.json.
     private static readonly Regex _characterId = new("^[a-z0-9][a-z0-9-]{0,39}$");
     private const int _titleTailBytes = 64 * 1024;
@@ -36,6 +38,8 @@ public static class Program
             ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".claude"),
         "projects");
     private static readonly Dictionary<string, string> _transcripts = [];
+    // Kept in a field: a MediaPlayer nothing references can be collected mid-sound.
+    private static MediaPlayer? _player;
 
     [DllImport("user32.dll")]
     private static extern bool ReleaseCapture();
@@ -196,6 +200,9 @@ public static class Program
                 window.Width = root.GetProperty("width").GetDouble();
                 window.Height = root.GetProperty("height").GetDouble();
                 break;
+            case "done":
+                PlayDoneSound(root.TryGetProperty("character", out var character) ? character.GetString() : null);
+                break;
         }
     }
 
@@ -256,6 +263,9 @@ public static class Program
             StaysOpenOnClick = true,
         };
 
+        var sound = new MenuItem { Header = "Sonido", IsCheckable = true, IsChecked = IsSoundOn() };
+        sound.Click += (_, _) => SaveSetting("sound", sound.IsChecked);
+
         var close = new MenuItem { Header = "Cerrar" };
         close.Click += (_, _) => window.Close();
 
@@ -263,6 +273,7 @@ public static class Program
         menu.Items.Add(characters);
         menu.Items.Add(show);
         menu.Items.Add(size);
+        menu.Items.Add(sound);
         menu.Items.Add(new Separator());
         menu.Items.Add(close);
         // Saved once the menu closes, not on every step of the slider.
@@ -311,6 +322,37 @@ public static class Program
             // An unreadable file just leaves that character out of the menu.
             return null;
         }
+    }
+
+    private static void PlayDoneSound(string? id)
+    {
+        // The id comes from the page: only a character folder name may become part of a path.
+        if (id is null || !_characterId.IsMatch(id) || !IsSoundOn())
+        {
+            return;
+        }
+
+        var file = _soundFiles
+            .Select(name => new FileInfo(Path.Combine(_charactersFolder, id, name)))
+            .FirstOrDefault(info => info.Exists && info.Length <= _maxSoundBytes);
+        if (file is null)
+        {
+            return;
+        }
+
+        if (_player is null)
+        {
+            _player = new MediaPlayer();
+            // Closing releases the file, so the user can replace the sound while the window is open.
+            _player.MediaEnded += (_, _) => _player.Close();
+        }
+        _player.Open(new Uri(file.FullName));
+        _player.Play();
+    }
+
+    private static bool IsSoundOn()
+    {
+        return ReadJsonObject(_settingsFile)["sound"] is not JsonValue value || !value.TryGetValue<bool>(out var isOn) || isOn;
     }
 
     private static void PostCharacter(WebView2CompositionControl webView, string? id)
