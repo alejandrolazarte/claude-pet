@@ -58,7 +58,8 @@ async function rest($: EngineInterface) {
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
-    isWatched = e.isInteractive
+    // The desktop Code tab starts its sessions through the SDK: not interactive, but attended by a person.
+    isWatched = e.isInteractive || (await $.env.get('CLAUDE_CODE_SESSION_ATTENDED')) === '1'
     await rest($)
     if (!isWatched) {
       return next(e)

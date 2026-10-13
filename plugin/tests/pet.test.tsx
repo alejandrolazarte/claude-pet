@@ -342,6 +342,33 @@ describe('pet', () => {
     expect(writes).toEqual([])
   })
 
+  test('a desktop Code tab session, not interactive but attended, opens the window and shows up in it', async ($, on) => {
+    // Arrange
+    mock.clock(on, { now: 1000 })
+    mock.env(on, { TEMP: 'C:\\Temp', CLAUDE_CODE_SESSION_ATTENDED: '1' })
+    const launched: string[][] = []
+    const writes: string[] = []
+    on('session.start', (_$, e) => ({ cwd: e.cwd }))
+    on('session.id', () => ({ value: 'abc-123' }))
+    on('session.root', () => ({ value: 'C:\\repos\\x' }))
+    on('fs.exists', () => ({ value: true }))
+    on('fs.write', (_$, e) => {
+      writes.push(e.path)
+      return { value: undefined }
+    })
+    on('process.run', (_$, e) => {
+      launched.push([...e.argv])
+      return { value: { exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
+    })
+
+    // Act
+    await $.session.start({ cwd: 'C:\\repos\\x', surface: null, isInteractive: false })
+
+    // Assert
+    expect(launched).toHaveLength(1)
+    expect(writes).toEqual(['C:\\Temp\\claude-pet\\abc-123.json'])
+  })
+
   test('does not try to open a window the plugin does not ship', async ($, on) => {
     // Arrange
     mock.clock(on)
