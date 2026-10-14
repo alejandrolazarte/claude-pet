@@ -4,14 +4,16 @@
 #   Videos only: -Start/-End keep a stretch of it, in seconds (End 0 = to the end); -Sheet writes a PNG with
 #   every frame numbered and timed, to pick that stretch.
 #   Videos and still images: -Outline paints a light edge around the figure into the pictures, once, instead of
-#   the window's CSS outline, which redraws on every frame of an animation.
+#   the window's CSS outline, which redraws on every frame of an animation. -KeepBackdrop leaves a thin band of the
+#   removed background around the figure, as an edge in its own color.
 param(
     [Parameter(Mandatory)] [string] $Source,
     [Parameter(Mandatory)] [string] $Out,
     [double] $Start = 0,
     [double] $End = 0,
     [string] $Sheet,
-    [switch] $Outline
+    [switch] $Outline,
+    [switch] $KeepBackdrop
 )
 $ErrorActionPreference = 'Stop'
 
@@ -26,10 +28,10 @@ elseif ($imageTypes.ContainsKey($extension)) {
     $animated = $extension -eq '.gif' -or
         ($extension -eq '.webp' -and $bytes.Length -gt 20 -and ($bytes[20] -band 2)) -or
         ($extension -eq '.png' -and [Text.Encoding]::ASCII.GetString($bytes).Contains('acTL'))
-    $image = @{ kind = 'image'; animated = [bool]$animated; outline = [bool]$Outline; text = "data:$($imageTypes[$extension]);base64,$([Convert]::ToBase64String($bytes))" }
+    $image = @{ kind = 'image'; animated = [bool]$animated; outline = [bool]$Outline; keepBackdrop = [bool]$KeepBackdrop; text = "data:$($imageTypes[$extension]);base64,$([Convert]::ToBase64String($bytes))" }
 }
 elseif ($videoTypes.ContainsKey($extension)) {
-    $image = @{ kind = 'video'; outline = [bool]$Outline; start = $Start; end = $End; sheet = [bool]$Sheet; text = "data:$($videoTypes[$extension]);base64,$([Convert]::ToBase64String([IO.File]::ReadAllBytes($Source)))" }
+    $image = @{ kind = 'video'; outline = [bool]$Outline; keepBackdrop = [bool]$KeepBackdrop; start = $Start; end = $End; sheet = [bool]$Sheet; text = "data:$($videoTypes[$extension]);base64,$([Convert]::ToBase64String([IO.File]::ReadAllBytes($Source)))" }
 }
 else {
     throw "Unsupported file type '$extension': use .svg, .png, .gif, .webp, .jpg, .webm or .mp4"
@@ -105,29 +107,55 @@ const draw = (source, w, h) => {
   canvas.getContext('2d').drawImage(source, 0, 0, w, h);
   return canvas;
 };
-// An opaque picture whose four corners share a color has a background: erase it by flooding from the edges,
-// so the same color inside the outline (a white shirt) stays.
+// An opaque picture has a background when its four corners share a color, or when its edge is a smooth shade (the
+// blue gradient of the Fortnite shop) that only shifts a little from one pixel to the next. Erases it by flooding in
+// from the edges, so the same color inside the outline (a white shirt) stays.
 function clearBackground(canvas) {
   const w = canvas.width, h = canvas.height, context = canvas.getContext('2d');
   const pixels = context.getImageData(0, 0, w, h), d = pixels.data;
+  const distance = (a, b) => Math.abs(d[a] - d[b]) + Math.abs(d[a + 1] - d[b + 1]) + Math.abs(d[a + 2] - d[b + 2]);
+  const border = [];
+  for (let x = 0; x < w; x++) border.push(x);
+  for (let y = 1; y < h; y++) border.push(y * w + w - 1);
+  for (let x = w - 2; x >= 0; x--) border.push((h - 1) * w + x);
+  for (let y = h - 2; y > 0; y--) border.push(y * w);
   const corners = [0, w - 1, (h - 1) * w, h * w - 1].map(p => p * 4);
-  const [r, g, b] = d.slice(corners[0], corners[0] + 3);
-  const near = i => Math.abs(d[i] - r) + Math.abs(d[i + 1] - g) + Math.abs(d[i + 2] - b) <= 60;
-  if (!corners.every(i => d[i + 3] === 255 && near(i))) return false;
+  const isPlain = corners.every(i => d[i + 3] === 255 && distance(i, corners[0]) <= 60);
+  // Measured on the edge: a shop gradient jumps by more than 6 on up to 7 % of it, even under effects; a game scene
+  // on about 20 %.
+  let jumps = 0;
+  for (let i = 0; i < border.length; i++) if (distance(border[i] * 4, border[(i + 1) % border.length] * 4) > 6) jumps++;
+  const isShaded = !isPlain && border.every(p => d[p * 4 + 3] === 255) && jumps <= border.length * 0.1;
+  if (!isPlain && !isShaded) return false;
+  const isBackground = isPlain ? (p, from) => distance(p * 4, corners[0]) <= 60 : (p, from) => distance(p * 4, from * 4) <= 18;
   const seen = new Uint8Array(w * h), stack = [];
-  for (let x = 0; x < w; x++) stack.push(x, (h - 1) * w + x);
-  for (let y = 0; y < h; y++) stack.push(y * w, y * w + w - 1);
+  for (const p of border) stack.push(p, p);
   while (stack.length) {
-    const p = stack.pop();
-    if (seen[p] || !near(p * 4)) continue;
+    const from = stack.pop(), p = stack.pop();
+    if (seen[p] || !isBackground(p, from)) continue;
     seen[p] = 1;
-    d[p * 4 + 3] = 0;
     const x = p % w;
-    if (x > 0) stack.push(p - 1);
-    if (x < w - 1) stack.push(p + 1);
-    if (p >= w) stack.push(p - w);
-    if (p < (h - 1) * w) stack.push(p + w);
+    if (x > 0) stack.push(p - 1, p);
+    if (x < w - 1) stack.push(p + 1, p);
+    if (p >= w) stack.push(p - w, p);
+    if (p < (h - 1) * w) stack.push(p + w, p);
   }
+  const kept = new Uint8Array(w * h);
+  if (input.keepBackdrop) {
+    let ring = [];
+    for (let p = 0; p < w * h; p++) if (!seen[p]) ring.push(p);
+    for (let step = Math.max(2, Math.round(Math.max(w, h) / 120)); step > 0 && ring.length; step--) {
+      const next = [];
+      for (const p of ring) {
+        const x = p % w;
+        for (const q of [x > 0 ? p - 1 : -1, x < w - 1 ? p + 1 : -1, p - w, p + w]) {
+          if (q >= 0 && q < w * h && seen[q] && !kept[q]) { kept[q] = 1; next.push(q); }
+        }
+      }
+      ring = next;
+    }
+  }
+  for (let p = 0; p < w * h; p++) if (seen[p] && !kept[p]) d[p * 4 + 3] = 0;
   context.putImageData(pixels, 0, 0);
   removedBackground = true;
   return true;
