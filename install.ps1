@@ -92,10 +92,12 @@ try {
         if ($LASTEXITCODE -ne 0) { Stop-Install 'No se pudo registrar el marketplace claude-pet.' }
     }
     $installed = & $claude.Path plugin list --json 2>$null | Out-String | ConvertFrom-Json
-    if (-not ($installed | Where-Object id -eq 'pet@claude-pet')) {
-        & $claude.Path plugin install pet@claude-pet --scope user
-        if ($LASTEXITCODE -ne 0) { Stop-Install 'No se pudo instalar el plugin pet@claude-pet.' }
+    # Claude Code runs a cached copy taken at install time: updating means installing again.
+    if ($installed | Where-Object id -eq 'pet@claude-pet') {
+        & $claude.Path plugin uninstall pet@claude-pet --scope user
     }
+    & $claude.Path plugin install pet@claude-pet --scope user
+    if ($LASTEXITCODE -ne 0) { Stop-Install 'No se pudo instalar el plugin pet@claude-pet.' }
     Ok 'instalado'
 
     New-Item -ItemType Directory $characters -Force | Out-Null

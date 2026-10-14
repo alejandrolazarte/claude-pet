@@ -60,7 +60,11 @@ Queda activo en todas las sesiones nuevas, también en las de la pestaña Code d
 
 ## Desarrollo
 
-Con un marketplace local (`claude plugin marketplace add <carpeta del repo>`), el plugin se lee de esa carpeta, no de una copia. Después de editar, correr `/reload-plugins` en la sesión.
+Claude Code no lee el plugin de la carpeta del marketplace: al instalarlo guarda una copia en `~/.claude/plugins/cache/claude-pet/pet/`. Si la carpeta es un repo git, la copia sale del último commit, sin los cambios sin commitear. `/reload-plugins` no la renueva. Para probar un cambio:
+
+1. Commitear.
+2. `claude plugin uninstall pet@claude-pet` y `claude plugin install pet@claude-pet --scope user`.
+3. Abrir una sesión nueva. Las sesiones abiertas pierden el mod al desinstalar, y `/reload-plugins` no lo devuelve.
 
 No versionar `.claude-plugin/types/` ni `tsconfig.json` si aparecen: los genera el motor en cada carga.
 
