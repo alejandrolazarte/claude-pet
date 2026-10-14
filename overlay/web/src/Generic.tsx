@@ -112,12 +112,49 @@ function bodyMotion(mood: Mood, { x, y, width, height }: Box): ReactElement | nu
   }
 }
 
+// Two hops and a wiggle on the feet: the same 1.2 s as POKE_MS in App.tsx.
+function pokeMotion({ x, y, width, height }: Box): ReactElement {
+  const u = height / 100
+  const pivot = `${x + width / 2} ${y + height}`
+
+  return (
+    <>
+      <animateTransform attributeName="transform" type="translate" values={`0 0;0 ${-6 * u};0 0;0 ${-3 * u};0 0`} dur="1.2s" fill="freeze" />
+      <animateTransform
+        attributeName="transform"
+        type="rotate"
+        values={`0 ${pivot};-5 ${pivot};5 ${pivot};-3 ${pivot};0 ${pivot}`}
+        dur="1.2s"
+        additive="sum"
+        fill="freeze"
+      />
+    </>
+  )
+}
+
+export function PokeHeart({ x, y, size }: { x: number; y: number; size: number }) {
+  return (
+    <g transform={`translate(${x} ${y}) scale(${size / 10})`}>
+      <g>
+        <animateTransform attributeName="transform" type="translate" values="0 0;0 -14" dur="1.2s" fill="freeze" />
+        <path d="M0,4 C-6,-1 -4,-6 0,-3 C4,-6 6,-1 0,4 Z" fill="#f2557a" stroke="#fff" strokeWidth={1}>
+          <animate attributeName="opacity" values="1;1;0" keyTimes="0;.6;1" dur="1.2s" fill="freeze" />
+        </path>
+      </g>
+    </g>
+  )
+}
+
 // Extras sit near the top right corner, since nothing is known about where its face is. Divided by the zoom,
 // so the size slider grows the character but not the extras.
-function Extra({ mood, box: { x, y, width, height }, zoom }: { mood: Mood; box: Box; zoom: number }) {
+function Extra({ mood, poked, box: { x, y, width, height }, zoom }: { mood: Mood; poked: boolean; box: Box; zoom: number }) {
   const u = height / 100 / zoom
   const ax = x + width * 0.86
   const ay = y + height * 0.14
+
+  if (poked) {
+    return <PokeHeart x={ax} y={ay} size={12 * u} />
+  }
 
   switch (mood) {
     case 'sleeping':
@@ -161,14 +198,15 @@ function Extra({ mood, box: { x, y, width, height }, zoom }: { mood: Mood; box: 
   }
 }
 
-export function Generic({ art, scale: zoom, mood, label }: { art: GenericArt; scale: number; mood: Mood; label: string }) {
+export function Generic({ art, scale: zoom, mood, poke, label }: { art: GenericArt; scale: number; mood: Mood; poke?: number; label: string }) {
   const { box } = art
   const scale = (SIZE * zoom) / Math.max(box.width, box.height)
+  const poked = poke !== undefined
 
   return (
-    // key: a new mood swaps the SMIL elements, so the animation starts over
+    // key: a new mood or a new tap swaps the SMIL elements, so the animation starts over
     <svg
-      key={mood}
+      key={poke ?? mood}
       viewBox={`${box.x} ${box.y} ${box.width} ${box.height}`}
       width={Math.round(box.width * scale)}
       height={Math.round(box.height * scale)}
@@ -176,10 +214,11 @@ export function Generic({ art, scale: zoom, mood, label }: { art: GenericArt; sc
       aria-label={label}
     >
       <g>
-        {bodyMotion(mood, box)}
-        <g dangerouslySetInnerHTML={{ __html: art.html(mood) }} />
+        {poked ? pokeMotion(box) : bodyMotion(mood, box)}
+        {/* Parts and frame loops play at their happy speed while the reaction lasts. */}
+        <g dangerouslySetInnerHTML={{ __html: art.html(poked ? 'happy' : mood) }} />
       </g>
-      <Extra mood={mood} box={box} zoom={zoom} />
+      <Extra mood={mood} poked={poked} box={box} zoom={zoom} />
     </svg>
   )
 }

@@ -4,7 +4,12 @@ import { onHostMessage, send } from './bridge'
 import { availableCharacters, resolveCharacter, scaleOf } from './characters'
 import { Pet, type Art } from './Pet'
 import { genericArt } from './Generic'
+import { movedBeyond, type Point } from './pointer'
 import { busiest, captionOf, finishedTask, moodDelayMs, visibleSessions, type CaptionMode, type Mood, type Session } from './sessions'
+
+const DRAG_PX = 4
+// As long as the hop in Pet.tsx and Generic.tsx.
+const POKE_MS = 1200
 
 export function App() {
   const [sessions, setSessions] = useState<Session[]>([])
@@ -17,6 +22,10 @@ export function App() {
   const [sizes, setSizes] = useState<Record<string, unknown> | null>(null)
   const pets = useRef<HTMLDivElement>(null)
   const moods = useRef<Record<string, Session['mood']>>({})
+  // Where the left button went down, until it moves far enough to be a drag.
+  const press = useRef<Point | null>(null)
+  // Each tap gets a new id, so tapping again restarts the reaction.
+  const [poke, setPoke] = useState<number>()
 
   useEffect(() => {
     const stop = onHostMessage(message => {
@@ -84,24 +93,54 @@ export function App() {
     moods.current = Object.fromEntries(sessions.map(s => [s.sessionId, s.mood]))
   }, [sessions])
 
+  useEffect(() => {
+    if (poke === undefined) {
+      return
+    }
+    const timer = setTimeout(() => setPoke(undefined), POKE_MS)
+
+    return () => clearTimeout(timer)
+  }, [poke])
+
   return (
     <div
       ref={pets}
       className="pets"
-      onMouseDown={event => event.button === 0 && send({ type: 'drag' })}
+      onMouseDown={event => {
+        if (event.button === 0) {
+          press.current = { x: event.screenX, y: event.screenY }
+        }
+      }}
+      onMouseMove={event => {
+        // A release outside the window never reaches the page: no button held means that press is over.
+        if (press.current && (event.buttons & 1) === 0) {
+          press.current = null
+        }
+        if (press.current && movedBeyond(press.current, { x: event.screenX, y: event.screenY }, DRAG_PX)) {
+          press.current = null
+          send({ type: 'drag' })
+        }
+      }}
+      onMouseUp={event => {
+        if (event.button === 0 && press.current) {
+          press.current = null
+          setPoke(Date.now())
+        }
+      }}
       onContextMenu={event => {
         event.preventDefault()
         send({ type: 'menu', characters: available, current: character, caption })
       }}
     >
       {shown === undefined ? (
-        <Pet art={art} character={character} scale={scale} mood={mood} label="sin sesiones" />
+        <Pet art={art} character={character} scale={scale} mood={mood} poke={poke} label="sin sesiones" />
       ) : (
         <Pet
           art={art}
           character={character}
           scale={scale}
           mood={mood}
+          poke={poke}
           label={shown.label}
           heading={captionOf(shown, caption)}
           others={visible.length - 1}
