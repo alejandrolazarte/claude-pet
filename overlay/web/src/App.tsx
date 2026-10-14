@@ -125,6 +125,7 @@ export function App() {
         if (event.button === 0 && press.current) {
           press.current = null
           setPoke(Date.now())
+          send({ type: 'poke', character })
         }
       }}
       onContextMenu={event => {
