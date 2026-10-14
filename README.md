@@ -16,7 +16,7 @@ El instalador (`install.ps1`):
 - registra el marketplace `claude-pet` e instala el plugin `pet@claude-pet` (si el marketplace ya está registrado, lo deja donde está);
 - crea `%LOCALAPPDATA%\claude-pet\characters\`.
 
-Se puede volver a correr para actualizar. Windows puede mostrar el aviso de SmartScreen la primera vez.
+Para actualizar, volver a correrlo con la versión nueva: reinstala el plugin. Después, reiniciar Claude Code. Windows puede mostrar el aviso de SmartScreen la primera vez.
 
 Para desinstalar:
 
