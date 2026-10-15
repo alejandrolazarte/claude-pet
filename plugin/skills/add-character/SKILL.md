@@ -49,7 +49,7 @@ La ventana vigila esa carpeta: un personaje nuevo aparece en el menú del clic d
 
 ## Sonido al terminar
 
-Un personaje puede sonar cuando una sesión de Claude termina una tarea (pasa a listo). Copiá el audio del usuario a `%LOCALAPPDATA%\claude-pet\characters\<id>\done.mp3` o `done.wav`, hasta 4 MB; otro formato hay que convertirlo antes. El mismo aviso de copyright vale para el audio. La ventana lo toma en el próximo final, sin reabrirla. Para silenciarlo: clic derecho → **Sonido**. Para sacarlo, borrá el archivo.
+Un personaje puede sonar cuando una sesión de Claude termina una tarea (pasa a listo). Copiá el audio del usuario a `%LOCALAPPDATA%\claude-pet\characters\<id>\done.mp3` o `done.wav`, hasta 20 MB; otro formato hay que convertirlo antes. El mismo aviso de copyright vale para el audio. La ventana lo toma en el próximo final, sin reabrirla. Para que suene al tocarlo, el audio va como `poke.mp3` o `poke.wav`: un toque lo empieza y otro lo para, así que sirve también para una canción entera. Para silenciarlo: clic derecho → **Sonido**. Para sacarlo, borrá el archivo.
 
 ## Sacar o renombrar un personaje
 

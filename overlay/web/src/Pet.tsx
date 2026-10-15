@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react'
 
 import type { CharacterId } from './characters'
-import { Generic, type GenericArt } from './Generic'
+import { Generic, PokeHeart, type GenericArt } from './Generic'
 import type { Mood } from './sessions'
 
 const MOTION: Record<Mood, ReactElement | null> = {
@@ -14,6 +14,21 @@ const MOTION: Record<Mood, ReactElement | null> = {
   sad: null,
   sleeping: <animateTransform attributeName="transform" type="translate" values="0 0;0 1;0 0" dur="3.5s" repeatCount="indefinite" />,
 }
+
+// Two hops and a wiggle on the feet: the same 1.2 s as POKE_MS in App.tsx.
+const POKE_MOTION = (
+  <>
+    <animateTransform attributeName="transform" type="translate" values="0 0;0 -6;0 0;0 -3;0 0" dur="1.2s" fill="freeze" />
+    <animateTransform
+      attributeName="transform"
+      type="rotate"
+      values="0 28 40;-5 28 40;5 28 40;-3 28 40;0 28 40"
+      dur="1.2s"
+      additive="sum"
+      fill="freeze"
+    />
+  </>
+)
 
 const BLINK = <animate attributeName="ry" values="3.4;3.4;.4;3.4" keyTimes="0;.94;.97;1" dur="4s" repeatCount="indefinite" />
 
@@ -83,21 +98,23 @@ function Extra({ mood }: { mood: Mood }) {
   }
 }
 
-function Blob({ mood, label, scale }: { mood: Mood; label: string; scale: number }) {
+function Blob({ mood, poke, label, scale }: { mood: Mood; poke?: number; label: string; scale: number }) {
+  const poked = poke !== undefined
+
   return (
-    // key: a new mood swaps the SMIL elements, so the animation starts over
-    <svg key={mood} viewBox="0 0 56 44" width={Math.round(72 * scale)} height={Math.round(57 * scale)} aria-label={label}>
+    // key: a new mood or a new tap swaps the SMIL elements, so the animation starts over
+    <svg key={poke ?? mood} viewBox="0 0 56 44" width={Math.round(72 * scale)} height={Math.round(57 * scale)} aria-label={label}>
       <ellipse cx={28} cy={41} rx={15} ry={2} fill="#000" opacity={0.15} />
       <g>
-        {MOTION[mood]}
+        {poked ? POKE_MOTION : MOTION[mood]}
         <path d="M10 38C8 24 14 10 28 10s20 14 18 28c-1 3-35 3-36 0z" fill="#f7f7f7" stroke="#d8d8d8" />
         <circle cx={17} cy={31} r={2.4} fill="#f9b4c4" opacity={0.7} />
         <circle cx={39} cy={31} r={2.4} fill="#f9b4c4" opacity={0.7} />
-        <Eyes mood={mood} />
+        <Eyes mood={poked ? 'happy' : mood} />
       </g>
       {/* The size slider grows the blob but not its extras, which are drawn around (48, 10). */}
       <g transform={`translate(48 10) scale(${1 / scale}) translate(-48 -10)`}>
-        <Extra mood={mood} />
+        {poked ? <PokeHeart x={48} y={10} size={9} /> : <Extra mood={mood} />}
       </g>
     </svg>
   )
@@ -110,19 +127,20 @@ type PetProps = {
   character: CharacterId
   scale: number
   mood: Mood
+  poke?: number
   label: string
   heading?: string
   others?: number
   onOthersHover?: (isOver: boolean) => void
 }
 
-export function Pet({ art, character, scale, mood, label, heading, others = 0, onOthersHover }: PetProps) {
+export function Pet({ art, character, scale, mood, poke, label, heading, others = 0, onOthersHover }: PetProps) {
   return (
     <div className="pet">
       {art.custom.has(character) ? (
-        <Generic art={art.custom.get(character)!} scale={scale} mood={mood} label={label} />
+        <Generic art={art.custom.get(character)!} scale={scale} mood={mood} poke={poke} label={label} />
       ) : (
-        <Blob mood={mood} label={label} scale={scale} />
+        <Blob mood={mood} poke={poke} label={label} scale={scale} />
       )}
       {/* Next to the caption, not in a corner: the caption stays at the character's feet at any size or shape. */}
       <div className="footer">
