@@ -53,7 +53,7 @@ Se probó con `claude` 2.1.300 en una carpeta vacía, pidiendo crear un archivo 
 
 El modelo recibe el mensaje de la denegación y no reintenta. Los hooks globales del usuario corren también en esta sesión, y el mod no la sigue (ignora las sesiones `-p`).
 
-**Sin verificar:** la respuesta de permitir (`{"behavior":"allow","updatedInput": …}`) y la de permitir ediciones en la charla (`allow` + `updatedPermissions` con la sugerencia `setMode acceptEdits`). La primera tarea del plan las prueba antes de construir encima.
+**Verificado también** (Tarea 1 del plan, `claude` 2.1.300, con Haiku): permitir responde `{"behavior":"allow","updatedInput": <input>}` y el archivo se crea; permitir ediciones en la charla agrega `"updatedPermissions": <permission_suggestions>` y la siguiente escritura de la sesión ya no pregunta; el interrupt (`{"type":"control_request","request_id":"…","request":{"subtype":"interrupt"}}`) recibe `{"subtype":"success","response":{"still_queued":[]}}` y el turno termina con un `result` de subtipo `error_during_execution`. Al cerrar el stdin después de un turno interrumpido, el proceso sale con código 1. La sesión grabada está en `overlay/web/src/chat/fixtures/session.jsonl` (sin rutas locales ni los deltas `input_json_delta`).
 
 ## Componentes
 
