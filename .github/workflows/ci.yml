@@ -24,8 +24,16 @@ jobs:
           npm ci
           npm run build
           npm test
-      # Mods need Claude Code 2.1.293 or later; npm's stable tag is still older. No login: the tests never call the model.
-      - name: Plugin (mod tests)
-        run: npx --yes @anthropic-ai/claude-code@2.1.296 plugin test plugin
       - name: Window (WPF)
         run: dotnet build overlay/PetOverlay.csproj -c Release
+
+  plugin:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      # Mods need Claude Code 2.1.293 or later; npm's stable tag is still older. No login: the tests never call the model.
+      - name: Mod tests
+        run: npx --yes @anthropic-ai/claude-code@2.1.296 plugin test plugin
