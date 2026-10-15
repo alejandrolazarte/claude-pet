@@ -14,7 +14,7 @@ Mod de Claude Code que sigue lo que hace Claude en cada sesión y se lo pasa a l
 | `turn.complete` interrumpido o con error | interrumpido / algo falló |
 | 5 min sin actividad | durmiendo |
 
-En el desktop el mod no dibuja nada en la franja de arriba del prompt: el bicho está solo en la ventana flotante. En la terminal muestra una carita de texto en esa franja, por ejemplo `(•‿•) esperando`.
+En el desktop el mod no dibuja nada en la franja de arriba del prompt: el bicho está solo en la ventana flotante. En la terminal muestra una carita de texto en esa franja, por ejemplo `(•‿•) esperando`. En la app del celular, que no tiene ventana flotante, dibuja ahí el bicho blanco con su estado (`hooks/blob.ts`).
 
 ## Ventana flotante
 

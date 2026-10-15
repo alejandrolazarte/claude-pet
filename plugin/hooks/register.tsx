@@ -3,6 +3,7 @@ import type { EngineInterface, Register, Timer } from 'claude-code'
 
 import type { Mood, PetState } from '../types'
 import { activityOf, failureOf } from './activity'
+import { blobSvg } from './blob'
 
 const IDLE: PetState = { mood: 'idle', label: 'esperando' }
 const state = atom({ plugin: 'pet', key: 'state' } as const, IDLE)
@@ -126,13 +127,29 @@ export const register: Register = on => {
   })
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    if (e.props.hasSurvey || e.surface !== 'terminal') {
+    if (e.props.hasSurvey) {
       return next(e)
     }
 
     const pet = await read($, state)
-    const { Text } = $.ui.resolve(e)
+    if (e.surface === 'terminal') {
+      const { Text } = $.ui.resolve(e)
 
-    return <Text dimColor>{FACES[pet.mood]} {pet.label}</Text>
+      return <Text dimColor>{FACES[pet.mood]} {pet.label}</Text>
+    }
+
+    // The mobile app has no floating window, so the blob is drawn in the band; on the desktop the window shows it.
+    if (e.surface === 'mobile') {
+      const { Box, Svg, Text } = $.ui.resolve(e)
+
+      return (
+        <Box flexDirection="row" alignItems="center" gap={1}>
+          <Svg key={pet.mood} source={blobSvg(pet.mood)} alt={pet.label} width={48} height={38} isInteractive />
+          <Text dimColor>{pet.label}</Text>
+        </Box>
+      )
+    }
+
+    return next(e)
   })
 }

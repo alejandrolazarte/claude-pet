@@ -256,6 +256,21 @@ describe('pet', () => {
     expect(await mood(ui)).toMatch(/\(•‿•\) esperando/)
   })
 
+  test('draws the blob with its state in the band of the mobile app, which has no floating window', async ($, on) => {
+    // Arrange
+    mock.clock(on)
+    on('turn.start', (_$, e) => ({ turnId: e.turnId }))
+    const ui = await $.ui.mount({ ...BAND, surface: 'mobile' })
+
+    // Act
+    await $.turn.start({ text: 'hola', turnId: 't1' })
+    const blob = await ui.find({ type: 'Svg' })
+
+    // Assert
+    expect(await mood(ui)).toBe('pensando')
+    expect(blob).toBeDefined()
+  })
+
   test('leaves the desktop band alone: the floating window shows the pet there', async ($, on) => {
     // Arrange
     mock.clock(on)
