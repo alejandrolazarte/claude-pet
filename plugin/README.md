@@ -78,6 +78,8 @@ claude plugin test plugin
 claude plugin validate plugin
 ```
 
+El CI corre `claude plugin test plugin` en cada push y PR, con el CLI de npm fijado en 2.1.296 y sin iniciar sesión.
+
 Si el `claude` del PATH es anterior a 2.1.293 da `unknown command 'test'`. En ese caso usar el binario de la app: `%APPDATA%\Claude\claude-code\<versión>\<hash>\claude.exe`.
 
 ## Trampas del API
@@ -85,6 +87,10 @@ Si el `claude` del PATH es anterior a 2.1.293 da `unknown command 'test'`. En es
 - Una función que recibe `$` tiene que estar declarada en el nivel superior del archivo. Si no, el módulo no carga.
 - El motor descarta `key` en los elementos no interactivos: en los tests, buscar por `type`.
 - En los tests de `ui.render`, el doble de lo que está debajo del plugin tiene que devolver un elemento (por ejemplo un `Text`), no `null`.
+
+## Licencias de terceros
+
+La ventana publicada (`window/`) incluye DLLs de Microsoft (WebView2, C#/WinRT, la proyección del SDK de Windows) y React dentro del JavaScript. Sus licencias y avisos están en [`THIRD-PARTY-NOTICES.txt`](THIRD-PARTY-NOTICES.txt). Si `publish.ps1` suma o cambia una dependencia, hay que actualizar ese archivo.
 
 ## Desinstalar
 
