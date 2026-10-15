@@ -2,4 +2,6 @@ overlay/web/node_modules/
 overlay/web/dist/
 overlay/bin/
 overlay/obj/
+overlay.Tests/bin/
+overlay.Tests/obj/
 *.tsbuildinfo
