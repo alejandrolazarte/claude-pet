@@ -67,9 +67,9 @@ El modelo recibe el mensaje de la denegación y no reintenta. Los hooks globales
    - Tarjetas de permiso con **Permitir**, **Permitir ediciones en esta charla** (solo si la pregunta trae esa sugerencia) y **Denegar**.
    - Cabecera con el nombre del personaje, la carpeta y **Nueva conversación**. Botón **Detener** mientras el personaje trabaja.
 4. **El pet:**
-   - C# escribe `%TEMP%\claude-pet\chat-<personaje>.json` con el mismo formato que el mod, así el pet muestra la charla como una sesión más ("Toji · chat") con sus prioridades de siempre. El `sessionId` es `chat-<personaje>`: como no es un GUID, la ventana no le busca título, y `repo` es el nombre de la carpeta.
+   - C# escribe `%TEMP%\claude-pet\chat-<personaje>.json` con el mismo formato que el mod, así el pet muestra la charla como una sesión más ("Toji · chat") con sus prioridades de siempre. El `sessionId` es `chat-<personaje>`: como no es un GUID, la ventana no le busca título. `repo` es `<carpeta> · chat`, para no confundirla con una sesión propia del usuario en ese mismo repo.
    - Para las preguntas de permiso, la página del pet recibe un mensaje nuevo, `permission`, y dibuja un globo con **Permitir / Denegar** sobre el personaje.
-5. **Persistencia:** `%LOCALAPPDATA%\claude-pet\chats.json`, con `{ "<personaje>|<carpeta>": "<session-id>", "lastFolder": "<carpeta>" }`.
+5. **Persistencia:** `%LOCALAPPDATA%\claude-pet\chats.json`, con `{ "sessions": { "<personaje>|<carpeta en minúsculas>": "<session-id>" }, "lastFolder": "<carpeta>" }`.
 
 ## Flujo y ciclo de vida
 
@@ -159,7 +159,7 @@ C# es un conducto: reenvía cada línea JSON del proceso, sin interpretarla, a l
 
 ## Riesgos
 
-- **El protocolo `stream-json` de control está poco documentado** y puede cambiar entre versiones de Claude Code. Se valida al empezar el plan, y la ventana avisa si la versión del CLI es anterior a la probada (2.1.300).
+- **El protocolo `stream-json` de control está poco documentado** y puede cambiar entre versiones de Claude Code. Se valida al empezar el plan. La ventana busca un CLI de la versión probada (2.1.300) o posterior; si solo encuentra uno más viejo, la charla muestra un error y no lanza nada, como hace el instalador con su mínimo.
 - **Los hooks del usuario corren en cada herramienta de la charla.** Si son lentos, como un escaneo SAST en cada edición, la charla también lo será.
 - **Coste:** cada mensaje consume del plan del usuario como cualquier sesión de Claude Code.
 - **Subir el cambio de la CI:** el token de `gh` de quien abre la PR no tiene el permiso `workflow`, y GitHub rechaza subir a un fork cambios en `.github/workflows/` sin él (ya pasó con la PR #9). Para incluir `overlay.Tests` en la CI hay que dar ese permiso (`gh auth refresh -s workflow`); si no, el cambio de `ci.yml` se propone en la descripción de la PR para que lo aplique el dueño.
