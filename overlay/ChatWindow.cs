@@ -251,7 +251,7 @@ public sealed class ChatWindow
         {
             var item = history[i];
             items.Add(item.Kind == "tool"
-                ? new JsonObject { ["kind"] = "tool", ["id"] = $"h{i}", ["name"] = item.Text, ["summary"] = item.Text }
+                ? new JsonObject { ["kind"] = "tool", ["id"] = $"h{i}", ["name"] = item.Text, ["summary"] = item.Text, ["status"] = "done" }
                 : new JsonObject { ["kind"] = item.Kind, ["text"] = item.Text });
         }
 
