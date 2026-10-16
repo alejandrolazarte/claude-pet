@@ -14,12 +14,13 @@ import stopIcon from './icons/stop.svg'
 import typingIcon from './icons/typing.svg'
 import { CELEBRATE_MS, IDLE_MOOD, moodOfLine, SENT_MOOD, type PetMood } from './petMood'
 import { blocksOf, countdown, initials } from './present'
-import type { ChatItem, Decision, Diff, DiffLine, ToolItem, ToolStatus } from './types'
+import type { Answer, ChatItem, Decision, Diff, DiffLine, ToolItem, ToolStatus } from './types'
 
-const ANSWER_TEXT: Record<Decision, string> = {
+const ANSWER_TEXT: Record<Answer, string> = {
   allow: 'Permitido',
   'allow-session-edits': 'Permitido, con las ediciones de esta charla',
   deny: 'Denegado',
+  cancelled: 'Cancelado',
 }
 
 const STEP_ICON: Record<ToolStatus, string> = { running: runningIcon, done: doneIcon, error: deniedIcon }

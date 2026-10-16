@@ -122,6 +122,10 @@ public static class ChatProtocol
     public static string? InitSessionId(string line) =>
         Parse(line) is { } json && TextOf(json, "type") == "system" && TextOf(json, "subtype") == "init" ? TextOf(json, "session_id") : null;
 
+    // An interrupt withdraws the open question: claude no longer waits for its answer.
+    public static string? CancelledRequestId(string line) =>
+        Parse(line) is { } json && TextOf(json, "type") == "control_cancel_request" ? TextOf(json, "request_id") : null;
+
     public static PermissionRequest? PermissionRequestOf(string line)
     {
         if (Parse(line) is not { } json || TextOf(json, "type") != "control_request" || json["request"] is not JsonObject request

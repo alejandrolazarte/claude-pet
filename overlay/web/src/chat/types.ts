@@ -1,5 +1,8 @@
 export type Decision = 'allow' | 'allow-session-edits' | 'deny'
 
+// 'cancelled': claude withdrew the question (an interrupt) or the turn ended with it open.
+export type Answer = Decision | 'cancelled'
+
 export type DiffLine = { kind: 'same' | 'del' | 'add'; text: string }
 
 // `lines` is capped for display; `added` and `removed` count the whole change.
@@ -22,7 +25,7 @@ export type ChatItem =
       canAllowEdits: boolean
       askedAt: number
       diff?: Diff
-      answer?: Decision
+      answer?: Answer
     }
   | { kind: 'notice'; text: string }
 

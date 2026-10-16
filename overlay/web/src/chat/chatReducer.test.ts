@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { chatReducer, diffOf, initialChat, type ChatAction } from './chatReducer'
+import type { ChatState } from './types'
 import fixture from './fixtures/session.jsonl?raw'
 
 const line = (value: unknown, at = 0): ChatAction => ({ type: 'line', line: JSON.stringify(value), at })
@@ -169,6 +170,21 @@ describe('chatReducer', () => {
 
     // Assert
     expect(state.items.map(item => (item.kind === 'permission' ? item.answer : undefined))).toEqual([undefined, 'deny'])
+  })
+
+  it('closes a card claude withdraws, as after Detener, and any card still open when the turn ends', () => {
+    // Arrange
+    const asked = run([ask('r1', 'Write', { file_path: 'a' }), ask('r2', 'Write', { file_path: 'b' }), ask('r3', 'Write', { file_path: 'c' })])
+    const answered = chatReducer(asked, { type: 'answered', requestId: 'r3', decision: 'allow' })
+
+    // Act
+    const withdrawn = chatReducer(answered, line({ type: 'control_cancel_request', request_id: 'r1' }))
+    const ended = chatReducer(withdrawn, result('error_during_execution'))
+
+    // Assert
+    const answers = (state: ChatState) => state.items.flatMap(item => (item.kind === 'permission' ? [item.answer] : []))
+    expect(answers(withdrawn)).toEqual(['cancelled', undefined, 'allow'])
+    expect(answers(ended)).toEqual(['cancelled', 'cancelled', 'allow'])
   })
 
   it('says so when the turn ends early, as after Detener', () => {

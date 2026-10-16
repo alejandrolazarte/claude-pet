@@ -187,6 +187,11 @@ public sealed class ChatWindow
             _broker.Ask(request, DateTime.UtcNow);
             PostPet(new JsonObject { ["type"] = "permission", ["requestId"] = request.RequestId, ["description"] = $"{_label}: {request.Description}" });
         }
+        // The chat page closes its card from this same line.
+        if (ChatProtocol.CancelledRequestId(line) is { } cancelled && _broker.Take(cancelled) is not null)
+        {
+            PostPet(new JsonObject { ["type"] = "permission-done", ["requestId"] = cancelled });
+        }
         PostChat(new JsonObject { ["type"] = "chat-event", ["line"] = line });
     }
 

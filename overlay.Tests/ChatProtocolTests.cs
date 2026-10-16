@@ -231,6 +231,23 @@ public class ChatProtocolTests
     }
 
     [Fact]
+    public void CancelledRequestId_reads_the_cancel_claude_sends_when_an_interrupt_withdraws_a_question()
+    {
+        // Recorded from claude 2.1.301 after an interrupt with a question open.
+        ChatProtocol.CancelledRequestId("""{"type":"control_cancel_request","request_id":"477f3ef6-4719-4b86-8fcd-1a0344383fe6"}""")
+            .ShouldBe("477f3ef6-4719-4b86-8fcd-1a0344383fe6");
+    }
+
+    [Theory]
+    [InlineData(ProbeRequest)]
+    [InlineData("""{"type":"control_cancel_request"}""")]
+    [InlineData("not json")]
+    public void CancelledRequestId_is_null_for_anything_else(string line)
+    {
+        ChatProtocol.CancelledRequestId(line).ShouldBeNull();
+    }
+
+    [Fact]
     public void PermissionRequestOf_describes_a_command_by_the_command_itself_not_by_the_models_words()
     {
         var request = ChatProtocol.PermissionRequestOf(BashRequest)!;

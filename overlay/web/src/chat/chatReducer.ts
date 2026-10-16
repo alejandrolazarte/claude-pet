@@ -91,9 +91,15 @@ const EDIT_TOOLS = new Set(['Edit', 'Write', 'NotebookEdit'])
 const isSessionEdits = (suggestion: Json) =>
   suggestion.type === 'setMode' && suggestion.mode === 'acceptEdits' && suggestion.destination === 'session'
 
-// Tools whose result never came: the turn ended without one.
+// What the turn left unfinished: tools whose result never came, and questions nobody can answer any more.
 const settle = (items: ChatItem[], status: ToolStatus) =>
-  items.map(item => (item.kind === 'tool' && item.status === 'running' ? { ...item, status } : item))
+  items.map(item =>
+    item.kind === 'tool' && item.status === 'running'
+      ? { ...item, status }
+      : item.kind === 'permission' && !item.answer
+        ? { ...item, answer: 'cancelled' as const }
+        : item,
+  )
 
 // Text still streaming becomes a message of its own when something else interrupts it.
 function flush(state: ChatState): ChatState {
@@ -174,6 +180,13 @@ function onLine(state: ChatState, line: string, at: number): ChatState {
 
       return { ...flushed, items: [...flushed.items, card] }
     }
+    case 'control_cancel_request':
+      return {
+        ...state,
+        items: state.items.map(item =>
+          item.kind === 'permission' && !item.answer && item.requestId === event.request_id ? { ...item, answer: 'cancelled' } : item,
+        ),
+      }
     case 'result': {
       const flushed = flush(state)
       const success = event.subtype === 'success'
