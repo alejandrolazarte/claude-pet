@@ -10,6 +10,9 @@ public class ChatProtocolTests
     // The permission request recorded from claude 2.1.300 (paths shortened).
     private const string ProbeRequest = """{"type":"control_request","request_id":"8a22400d","request":{"subtype":"can_use_tool","tool_name":"Write","display_name":"Write","input":{"file_path":"C:\\work\\hola.txt","content":"hola"},"description":"hola.txt","permission_suggestions":[{"type":"setMode","mode":"acceptEdits","destination":"session"}],"tool_use_id":"toolu_1"}}""";
 
+    // A Bash request shaped like claude 2.1.301's for a file outside the folder: a permanent rule next to session-only ones.
+    private const string BashRequest = """{"type":"control_request","request_id":"b1","request":{"subtype":"can_use_tool","tool_name":"Bash","input":{"command":"rm C:/temp/x.log","description":"Ver la versión de Node"},"description":"Ver la versión de Node","permission_suggestions":[{"type":"addRules","rules":[{"toolName":"Bash","ruleContent":"rm *"}],"behavior":"allow","destination":"localSettings"},{"type":"setMode","mode":"acceptEdits","destination":"session"},{"type":"addDirectories","directories":["C:/temp"],"destination":"session"}],"tool_use_id":"toolu_2"}}""";
+
     private static JsonNode Json(string text) => JsonNode.Parse(text)!;
 
     [Fact]
@@ -182,6 +185,31 @@ public class ChatProtocolTests
 
         inner["behavior"]!.GetValue<string>().ShouldBe("allow");
         inner["updatedPermissions"]![0]!["mode"]!.GetValue<string>().ShouldBe("acceptEdits");
+    }
+
+    [Fact]
+    public void PermissionResponse_allows_session_edits_without_saving_rules_or_widening_folders()
+    {
+        var request = ChatProtocol.PermissionRequestOf(BashRequest)!;
+
+        var inner = Json(ChatProtocol.PermissionResponse(request, PermissionDecision.AllowSessionEdits, "unused"))["response"]!["response"]!;
+
+        var updates = inner["updatedPermissions"]!.AsArray();
+        updates.Count.ShouldBe(1);
+        updates[0]!["type"]!.GetValue<string>().ShouldBe("setMode");
+        updates[0]!["destination"]!.GetValue<string>().ShouldBe("session");
+    }
+
+    [Fact]
+    public void PermissionResponse_allows_once_when_no_session_edits_were_offered()
+    {
+        var request = ChatProtocol.PermissionRequestOf(ProbeRequest.Replace("""{"type":"setMode","mode":"acceptEdits","destination":"session"}""",
+            """{"type":"addRules","rules":[{"toolName":"Write"}],"behavior":"allow","destination":"localSettings"}"""))!;
+
+        var inner = Json(ChatProtocol.PermissionResponse(request, PermissionDecision.AllowSessionEdits, "unused"))["response"]!["response"]!;
+
+        inner["behavior"]!.GetValue<string>().ShouldBe("allow");
+        inner["updatedPermissions"].ShouldBeNull();
     }
 
     [Fact]

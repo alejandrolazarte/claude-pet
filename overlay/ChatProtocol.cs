@@ -97,9 +97,9 @@ public static class ChatProtocol
         var response = decision == PermissionDecision.Deny
             ? new JsonObject { ["behavior"] = "deny", ["message"] = denyMessage }
             : new JsonObject { ["behavior"] = "allow", ["updatedInput"] = request.Input?.DeepClone() ?? new JsonObject() };
-        if (decision == PermissionDecision.AllowSessionEdits && request.Suggestions is not null)
+        if (decision == PermissionDecision.AllowSessionEdits && SessionEdits(request.Suggestions) is { Count: > 0 } edits)
         {
-            response["updatedPermissions"] = request.Suggestions.DeepClone();
+            response["updatedPermissions"] = edits;
         }
 
         return new JsonObject
@@ -108,6 +108,16 @@ public static class ChatProtocol
             ["response"] = new JsonObject { ["subtype"] = "success", ["request_id"] = request.RequestId, ["response"] = response },
         }.ToJsonString();
     }
+
+    // Only "accept edits for this session": the other suggestions save rules for good (Bash(rm *)) or widen the folders.
+    private static JsonArray SessionEdits(JsonNode? suggestions) =>
+        new(suggestions is JsonArray all
+            ? all.OfType<JsonObject>()
+                .Where(suggestion => TextOf(suggestion, "type") == "setMode" && TextOf(suggestion, "mode") == "acceptEdits"
+                    && TextOf(suggestion, "destination") == "session")
+                .Select(suggestion => suggestion.DeepClone())
+                .ToArray()
+            : []);
 
     public static string? InitSessionId(string line) =>
         Parse(line) is { } json && TextOf(json, "type") == "system" && TextOf(json, "subtype") == "init" ? TextOf(json, "session_id") : null;

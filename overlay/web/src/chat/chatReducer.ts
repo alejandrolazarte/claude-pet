@@ -79,6 +79,12 @@ export function diffOf(name: string, input: Json): Diff | undefined {
   }
 }
 
+const EDIT_TOOLS = new Set(['Edit', 'Write', 'NotebookEdit'])
+
+// The one suggestion the edits button sends back (ChatProtocol.PermissionResponse): the others save rules for good.
+const isSessionEdits = (suggestion: Json) =>
+  suggestion.type === 'setMode' && suggestion.mode === 'acceptEdits' && suggestion.destination === 'session'
+
 // Tools whose result never came: the turn ended without one.
 const settle = (items: ChatItem[], status: ToolStatus) =>
   items.map(item => (item.kind === 'tool' && item.status === 'running' ? { ...item, status } : item))
@@ -154,7 +160,7 @@ function onLine(state: ChatState, line: string, at: number): ChatState {
         toolUseId: text(request.tool_use_id),
         tool,
         detail: permissionDetail(input, text(request.description) || tool),
-        canAllowEdits: suggestions.some(suggestion => suggestion.type === 'setMode' && suggestion.mode === 'acceptEdits'),
+        canAllowEdits: EDIT_TOOLS.has(tool) && suggestions.some(isSessionEdits),
         askedAt: at,
         diff: diffOf(tool, input),
       }

@@ -148,6 +148,18 @@ describe('chatReducer', () => {
     ])
   })
 
+  it('offers edits for the chat only for file edits, and only as a mode of this session', () => {
+    // Act
+    const state = run([
+      ask('r1', 'Bash', { command: 'rm x.log' }, [acceptEdits]),
+      ask('r2', 'Write', { file_path: 'a.txt', content: 'a' }, [{ ...acceptEdits, destination: 'localSettings' }]),
+      ask('r3', 'Edit', { file_path: 'a.txt', old_string: 'a', new_string: 'b' }, [acceptEdits]),
+    ])
+
+    // Assert
+    expect(state.items.map(item => item.kind === 'permission' && item.canAllowEdits)).toEqual([false, false, true])
+  })
+
   it('marks a card answered, and only that one', () => {
     // Arrange
     const asked = run([ask('r1', 'Write', { file_path: 'a' }), ask('r2', 'Write', { file_path: 'b' })])
