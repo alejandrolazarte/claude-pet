@@ -349,7 +349,8 @@ public sealed class ChatWindow
             ];
 
         return ChatProtocol.PickClaude(candidates
-            .Where(File.Exists)
+            // Only an .exe: a .cmd runs through cmd.exe, which re-reads the persona's quotes, & and % as its own syntax.
+            .Where(path => Path.GetExtension(path).Equals(".exe", StringComparison.OrdinalIgnoreCase) && File.Exists(path))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Select(path => (path, VersionOf(path))));
     }
