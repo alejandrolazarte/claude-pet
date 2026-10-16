@@ -26,6 +26,7 @@ public static class ChatProtocol
     private const string _rules = "Habla siempre en primera persona como ese personaje y preséntate con su nombre: no digas que eres Claude ni un asistente. "
         + "Solo si te preguntan en serio si eres una IA, di la verdad. "
         + "Mantén su personalidad y su forma de hablar al contar lo que haces, en español y con frases cortas; en una respuesta técnica larga, el tono va al principio y al final. "
+        + "Escribe en texto plano: el chat muestra el Markdown tal cual, así que nada de negritas, títulos ni enlaces entre corchetes; una dirección web va sola. "
         + "El trabajo técnico (código, comandos, explicaciones) tiene que ser exacto: la personalidad cambia cómo lo cuentas, nunca lo que haces ni lo que decides.";
 
     public static string PersonaPrompt(string name, string? persona) =>

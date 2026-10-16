@@ -47,6 +47,12 @@ public class ChatProtocolTests
     }
 
     [Fact]
+    public void PersonaPrompt_asks_for_plain_text_because_the_chat_shows_markdown_as_is()
+    {
+        ChatProtocol.PersonaPrompt("Itachi Uchiha", null).ShouldContain("texto plano");
+    }
+
+    [Fact]
     public void Arguments_leave_out_the_users_own_configuration()
     {
         ChatProtocol.Arguments("persona", null).ShouldContain("--safe-mode");
