@@ -28,6 +28,8 @@ public sealed class ChatWindow
     private readonly ChatStore _store;
     private readonly PermissionBroker _broker = new();
     private readonly DispatcherTimer _expiry = new() { Interval = TimeSpan.FromSeconds(5) };
+    // Found once: running --version on every candidate blocks the UI thread, which the pet shares.
+    private static string? _claude;
     private ChatHost? _host;
     private bool _closing;
 
@@ -160,7 +162,7 @@ public sealed class ChatWindow
             return;
         }
 
-        if (FindClaude() is not { } claude)
+        if ((_claude ??= FindClaude()) is not { } claude)
         {
             PostChat(Init([], null, $"No encontré Claude Code {ChatProtocol.MinimumClaude} o superior. Revisá que `claude` esté en el PATH, o definí CLAUDE_PET_CLAUDE con la ruta de claude.exe."));
             return;
@@ -178,7 +180,17 @@ public sealed class ChatWindow
         }
 
         IReadOnlyList<HistoryItem> history = transcript is null ? [] : ChatProtocol.History(transcript);
-        _host = ChatHost.Start(claude, _folder, ChatProtocol.Arguments(_personaPrompt, resumeId), _window.Dispatcher);
+        try
+        {
+            _host = ChatHost.Start(claude, _folder, ChatProtocol.Arguments(_personaPrompt, resumeId), _window.Dispatcher);
+        }
+        catch (Win32Exception)
+        {
+            // The claude.exe found earlier is gone (an update replaced it): look again next time.
+            _claude = null;
+            PostChat(Init([], null, "No pude abrir Claude Code. Cerrá esta ventana y volvé a abrir Hablar."));
+            return;
+        }
         _host.Line += OnLine;
         _host.Exited += OnExited;
         PostChat(Init(history, notice, null));
@@ -380,11 +392,17 @@ public sealed class ChatWindow
             {
                 return null;
             }
-            var output = process.StandardOutput.ReadToEnd();
+            var output = process.StandardOutput.ReadToEndAsync();
+            // A candidate that hangs is killed; reading to the end first would wait for it forever.
+            if (!process.WaitForExit(5000))
+            {
+                process.Kill();
+                return null;
+            }
 
-            return process.WaitForExit(5000) ? ChatProtocol.ParseVersion(output) : null;
+            return ChatProtocol.ParseVersion(output.Result);
         }
-        catch (Exception exception) when (exception is Win32Exception or IOException)
+        catch (Exception exception) when (exception is Win32Exception or IOException or InvalidOperationException)
         {
             return null;
         }
