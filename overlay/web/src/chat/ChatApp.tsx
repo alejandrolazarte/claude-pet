@@ -104,7 +104,10 @@ export function ChatApp() {
     }
   }, [])
 
-  useEffect(() => bottom.current?.scrollIntoView({ block: 'end' }), [state.items, state.draft])
+  // Braces matter: scrollIntoView returns a Promise in current WebView2, and React would call it as the cleanup.
+  useEffect(() => {
+    bottom.current?.scrollIntoView({ block: 'end' })
+  }, [state.items, state.draft])
 
   const closed = Boolean(error) || exited
   const submit = () => {
