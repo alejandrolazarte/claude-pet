@@ -198,6 +198,8 @@ public sealed class ChatWindow
 
         _host.Line -= OnLine;
         _host.Exited -= OnExited;
+        // Ends a turn in progress now, rather than when it finishes or at the 5 s kill.
+        _host.Send(ChatProtocol.InterruptRequest(Guid.NewGuid().ToString()));
         _host.Close();
         _host = null;
     }

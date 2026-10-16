@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -85,24 +86,34 @@ public sealed class ChatHost
         }
     }
 
-    // Closing stdin lets claude finish and save the session; after 5 s it is killed.
+    // Closing stdin lets claude finish and save the session; after 5 s it is killed. The wait runs in the background: the pet
+    // shares the UI thread, and a busy claude used to freeze it for the whole 5 s.
     public void Close()
     {
         try
         {
-            if (!_process.HasExited)
-            {
-                _process.StandardInput.Close();
-                if (!_process.WaitForExit(TimeSpan.FromSeconds(5)))
-                {
-                    _process.Kill(entireProcessTree: true);
-                }
-            }
+            _process.StandardInput.Close();
         }
         catch (Exception exception) when (exception is IOException or InvalidOperationException)
         {
             // Already gone.
         }
-        _process.Dispose();
+
+        var process = _process;
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                if (!process.WaitForExit(TimeSpan.FromSeconds(5)))
+                {
+                    process.Kill(entireProcessTree: true);
+                }
+            }
+            catch (Exception exception) when (exception is InvalidOperationException or Win32Exception)
+            {
+                // Already gone.
+            }
+            process.Dispose();
+        });
     }
 }
