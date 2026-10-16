@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Shouldly;
 using Xunit;
@@ -199,6 +200,30 @@ public class ChatProtocolTests
     public void PermissionRequestOf_is_null_for_anything_else(string line)
     {
         ChatProtocol.PermissionRequestOf(line).ShouldBeNull();
+    }
+
+    [Fact]
+    public void ChatTarget_takes_the_current_character_and_its_menu_label()
+    {
+        using var request = JsonDocument.Parse("""{"type":"menu","current":"itachi","characters":[{"id":"toji","label":"Toji Fushiguro"},{"id":"itachi","label":"Itachi Uchiha"}]}""");
+
+        ChatProtocol.ChatTarget(request.RootElement).ShouldBe(("itachi", "Itachi Uchiha"));
+    }
+
+    [Fact]
+    public void ChatTarget_falls_back_to_the_id_without_a_label()
+    {
+        using var request = JsonDocument.Parse("""{"type":"menu","current":"blob","characters":[{"id":"toji","label":"Toji Fushiguro"}]}""");
+
+        ChatProtocol.ChatTarget(request.RootElement).ShouldBe(("blob", "blob"));
+    }
+
+    [Fact]
+    public void ChatTarget_defaults_to_the_blob_when_nothing_is_current()
+    {
+        using var request = JsonDocument.Parse("""{"type":"menu","current":null,"characters":[]}""");
+
+        ChatProtocol.ChatTarget(request.RootElement).ShouldBe(("blob", "blob"));
     }
 
     [Fact]

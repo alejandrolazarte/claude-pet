@@ -246,8 +246,9 @@ public static class Program
             characters.Items.Add(item);
         }
 
+        var target = ChatProtocol.ChatTarget(request);
         var talk = new MenuItem { Header = "Hablar" };
-        talk.Click += (_, _) => OpenChat(window, webView, request.Clone());
+        talk.Click += (_, _) => OpenChat(window, webView, target.Id, target.Label);
 
         var caption = request.GetProperty("caption").GetString();
         var show = new MenuItem { Header = "Mostrar" };
@@ -311,18 +312,13 @@ public static class Program
         menu.IsOpen = true;
     }
 
-    private static void OpenChat(Window window, WebView2CompositionControl webView, JsonElement request)
+    private static void OpenChat(Window window, WebView2CompositionControl webView, string current, string label)
     {
-        var current = request.GetProperty("current").GetString() ?? "blob";
         if (!_characterId.IsMatch(current))
         {
             return;
         }
 
-        var label = request.GetProperty("characters").EnumerateArray()
-            .Where(character => character.GetProperty("id").GetString() == current)
-            .Select(character => character.GetProperty("label").GetString())
-            .FirstOrDefault() ?? current;
         var persona = TextOf(ReadJsonObject(Path.Combine(_charactersFolder, current, "character.json")), "persona");
         var name = current == "blob" ? ChatProtocol.BlobName : label;
         ChatWindow.Open(window, webView, current, label, ChatProtocol.PersonaPrompt(name, persona));

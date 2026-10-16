@@ -46,6 +46,21 @@ public static class ChatProtocol
         return arguments;
     }
 
+    // Read while the menu is built: the JsonDocument behind the menu request is disposed before any click.
+    public static (string Id, string Label) ChatTarget(JsonElement menuRequest)
+    {
+        var current = menuRequest.TryGetProperty("current", out var id) && id.ValueKind == JsonValueKind.String ? id.GetString()! : "blob";
+        var label = menuRequest.TryGetProperty("characters", out var characters) && characters.ValueKind == JsonValueKind.Array
+            ? characters.EnumerateArray()
+                .Where(character => character.TryGetProperty("id", out var characterId) && characterId.ValueKind == JsonValueKind.String
+                    && characterId.GetString() == current)
+                .Select(character => character.TryGetProperty("label", out var name) && name.ValueKind == JsonValueKind.String ? name.GetString() : null)
+                .FirstOrDefault()
+            : null;
+
+        return (current, label ?? current);
+    }
+
     public static string ChatKey(string characterId, string folder) =>
         $"{characterId}|{Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder)).ToLowerInvariant()}";
 
