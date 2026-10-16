@@ -18,7 +18,8 @@ public sealed class ChatWindow
     private const string _noAnswer = "Sin respuesta del usuario.";
 
     private readonly Window _window;
-    private readonly WebView2 _chat = new();
+    // Composition hosting like the pet's: one browser process cannot mix it with the windowed WebView2 control.
+    private readonly WebView2CompositionControl _chat = new();
     private readonly WebView2CompositionControl _pet;
     private readonly string _characterId;
     private readonly string _label;
