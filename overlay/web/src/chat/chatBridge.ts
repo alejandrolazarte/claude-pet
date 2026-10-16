@@ -2,7 +2,7 @@ import type { Mood } from '../sessions'
 import type { ChatItem, Decision } from './types'
 
 export type ChatHostMessage =
-  | { type: 'chat-init'; character: string; label: string; folder: string; history: ChatItem[]; notice: string | null; error: string | null }
+  | { type: 'chat-init'; character: string; label: string; history: ChatItem[]; notice: string | null; error: string | null }
   | { type: 'chat-event'; line: string }
   | { type: 'chat-exit'; code: number }
   | { type: 'chat-permission-done'; requestId: string; decision: Decision }

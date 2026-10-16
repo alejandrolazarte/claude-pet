@@ -23,18 +23,14 @@ public sealed class ChatStoreTests : IDisposable
         var store = new ChatStore(_path);
 
         store.SessionFor("toji|c:\\repo").ShouldBeNull();
-        store.LastFolder.ShouldBeNull();
     }
 
     [Fact]
-    public void Saved_sessions_and_folder_survive_a_new_store()
+    public void Saved_sessions_survive_a_new_store()
     {
         new ChatStore(_path).Save("toji|c:\\repo", "715acc71");
-        new ChatStore(_path).SaveLastFolder(@"C:\Repo");
 
-        var reopened = new ChatStore(_path);
-        reopened.SessionFor("toji|c:\\repo").ShouldBe("715acc71");
-        reopened.LastFolder.ShouldBe(@"C:\Repo");
+        new ChatStore(_path).SessionFor("toji|c:\\repo").ShouldBe("715acc71");
     }
 
     [Fact]

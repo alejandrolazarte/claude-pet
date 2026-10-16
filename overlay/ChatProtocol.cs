@@ -38,6 +38,8 @@ public static class ChatProtocol
             "-p", "--input-format", "stream-json", "--output-format", "stream-json", "--verbose", "--include-partial-messages",
             // Manual, not the user's own mode: in auto mode the classifier approves everything and nothing would reach the pet.
             "--permission-mode", "manual", "--permission-prompt-tool", "stdio",
+            // A chat of its own: none of the user's CLAUDE.md, plugins, hooks or MCP servers (work, mail, chat) reach it.
+            "--safe-mode",
             "--append-system-prompt", personaPrompt,
         ];
         if (resumeSessionId is not null)

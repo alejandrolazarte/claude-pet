@@ -47,6 +47,12 @@ public class ChatProtocolTests
     }
 
     [Fact]
+    public void Arguments_leave_out_the_users_own_configuration()
+    {
+        ChatProtocol.Arguments("persona", null).ShouldContain("--safe-mode");
+    }
+
+    [Fact]
     public void Arguments_ask_for_stream_json_and_manual_permissions_answered_on_stdio()
     {
         var arguments = ChatProtocol.Arguments("persona", null);

@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 
 namespace PetOverlay;
 
-// chats.json: the Claude session each character has in each folder, and the last folder picked.
+// chats.json: the Claude session each character has in each folder.
 public sealed class ChatStore(string path)
 {
     public string? SessionFor(string key) => Read()["sessions"] is JsonObject sessions ? Text(sessions[key]) : null;
@@ -12,10 +12,6 @@ public sealed class ChatStore(string path)
     public void Save(string key, string sessionId) => Update(json => Sessions(json)[key] = sessionId);
 
     public void Forget(string key) => Update(json => Sessions(json).Remove(key));
-
-    public string? LastFolder => Text(Read()["lastFolder"]);
-
-    public void SaveLastFolder(string folder) => Update(json => json["lastFolder"] = folder);
 
     private static JsonObject Sessions(JsonObject json)
     {

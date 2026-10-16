@@ -248,7 +248,7 @@ public static class Program
 
         var target = ChatProtocol.ChatTarget(request);
         var talk = new MenuItem { Header = "Hablar" };
-        talk.Click += (_, _) => OpenChat(window, webView, target.Id, target.Label);
+        talk.Click += (_, _) => OpenChat(webView, target.Id, target.Label);
 
         var caption = request.GetProperty("caption").GetString();
         var show = new MenuItem { Header = "Mostrar" };
@@ -312,7 +312,7 @@ public static class Program
         menu.IsOpen = true;
     }
 
-    private static void OpenChat(Window window, WebView2CompositionControl webView, string current, string label)
+    private static void OpenChat(WebView2CompositionControl webView, string current, string label)
     {
         if (!_characterId.IsMatch(current))
         {
@@ -321,7 +321,7 @@ public static class Program
 
         var persona = TextOf(ReadJsonObject(Path.Combine(_charactersFolder, current, "character.json")), "persona");
         var name = current == "blob" ? ChatProtocol.BlobName : label;
-        ChatWindow.Open(window, webView, current, label, ChatProtocol.PersonaPrompt(name, persona));
+        ChatWindow.Open(webView, current, label, ChatProtocol.PersonaPrompt(name, persona));
     }
 
     private static void PostArt(WebView2CompositionControl webView)

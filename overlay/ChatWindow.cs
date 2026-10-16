@@ -7,7 +7,6 @@ using System.Windows;
 using System.Windows.Threading;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.Wpf;
-using Microsoft.Win32;
 
 namespace PetOverlay;
 
@@ -43,7 +42,7 @@ public sealed class ChatWindow
         _folder = folder;
         _store = store;
         _key = ChatProtocol.ChatKey(characterId, folder);
-        _window = new Window { Title = $"{label} · {folder}", Width = 520, Height = 680, Content = _chat };
+        _window = new Window { Title = label, Width = 520, Height = 680, Content = _chat };
         _window.Loaded += async (_, _) =>
         {
             // Same data folder and options as the pet's WebView2, so both share one browser process.
@@ -70,7 +69,7 @@ public sealed class ChatWindow
 
     public static ChatWindow? Current { get; private set; }
 
-    public static void Open(Window pet, WebView2CompositionControl petView, string characterId, string label, string personaPrompt)
+    public static void Open(WebView2CompositionControl petView, string characterId, string label, string personaPrompt)
     {
         if (Current is not null)
         {
@@ -78,19 +77,9 @@ public sealed class ChatWindow
             return;
         }
 
-        var store = new ChatStore(Path.Combine(Program.SettingsFolder, "chats.json"));
-        var picker = new OpenFolderDialog { Title = $"¿En qué carpeta trabaja {label}?" };
-        if (store.LastFolder is { } last && Directory.Exists(last))
-        {
-            picker.InitialDirectory = last;
-        }
-        if (picker.ShowDialog(pet) != true)
-        {
-            return;
-        }
-
-        store.SaveLastFolder(picker.FolderName);
-        Current = new ChatWindow(petView, characterId, label, personaPrompt, picker.FolderName, store);
+        // An empty folder of the character's own: the chat is a conversation, away from the user's repos and their CLAUDE.md.
+        var folder = Directory.CreateDirectory(Path.Combine(Program.SettingsFolder, "chats", characterId)).FullName;
+        Current = new ChatWindow(petView, characterId, label, personaPrompt, folder, new ChatStore(Path.Combine(Program.SettingsFolder, "chats.json")));
     }
 
     public static void CloseCurrent() => Current?._window.Close();
@@ -260,7 +249,6 @@ public sealed class ChatWindow
             ["type"] = "chat-init",
             ["character"] = _characterId,
             ["label"] = _label,
-            ["folder"] = _folder,
             ["history"] = items,
             ["notice"] = notice,
             ["error"] = error,
@@ -269,11 +257,10 @@ public sealed class ChatWindow
 
     private void WriteSession(string mood, string label)
     {
-        var name = Path.GetFileName(Path.TrimEndingDirectorySeparator(_folder));
         var session = new JsonObject
         {
             ["sessionId"] = $"chat-{_characterId}",
-            ["repo"] = $"{(name.Length > 0 ? name : _folder)} · chat",
+            ["repo"] = $"{_label} · chat",
             ["mood"] = mood,
             ["label"] = label,
             ["updatedAt"] = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
