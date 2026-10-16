@@ -48,7 +48,20 @@ public sealed class ChatHost
         };
         // Drained and dropped: a full stderr pipe would block claude.
         process.ErrorDataReceived += (_, e) => Debug.WriteLineIf(e.Data is not null, e.Data);
-        process.Exited += (_, _) => dispatcher.BeginInvoke(() => host.Exited?.Invoke(process.ExitCode));
+        process.Exited += (_, _) =>
+        {
+            try
+            {
+                // Waits for stdout to end, so every line is queued before the exit.
+                process.WaitForExit();
+            }
+            catch (Exception exception) when (exception is InvalidOperationException or ObjectDisposedException)
+            {
+                // Closed and disposed by Close: nobody listens any more.
+                return;
+            }
+            dispatcher.BeginInvoke(() => host.Exited?.Invoke(process.ExitCode));
+        };
         process.Start();
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();

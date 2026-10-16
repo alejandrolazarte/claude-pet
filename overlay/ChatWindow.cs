@@ -29,8 +29,6 @@ public sealed class ChatWindow
     private readonly PermissionBroker _broker = new();
     private readonly DispatcherTimer _expiry = new() { Interval = TimeSpan.FromSeconds(5) };
     private ChatHost? _host;
-    private bool _resumed;
-    private bool _sawInit;
     private bool _closing;
 
     private ChatWindow(WebView2CompositionControl pet, string characterId, string label, string personaPrompt, string folder, ChatStore store)
@@ -154,7 +152,7 @@ public sealed class ChatWindow
         _ => PermissionDecision.Deny,
     };
 
-    private void StartClaude(bool resume, string? notice = null)
+    private void StartClaude(bool resume)
     {
         // React's strict mode mounts the page twice in development: one process is enough.
         if (_host is not null)
@@ -169,9 +167,17 @@ public sealed class ChatWindow
         }
 
         var resumeId = resume ? _store.SessionFor(_key) : null;
-        _resumed = resumeId is not null;
-        _sawInit = false;
-        IReadOnlyList<HistoryItem> history = resumeId is null ? [] : ChatProtocol.History(ReadTranscript(resumeId));
+        var transcript = resumeId is null ? null : TranscriptOf(resumeId);
+        string? notice = null;
+        // Decided before starting: guessing from the exit code also forgot sessions that were fine, when claude died for another reason.
+        if (resumeId is not null && transcript is null)
+        {
+            _store.Forget(_key);
+            resumeId = null;
+            notice = "No encontré la conversación anterior; empiezo una nueva.";
+        }
+
+        IReadOnlyList<HistoryItem> history = transcript is null ? [] : ChatProtocol.History(transcript);
         _host = ChatHost.Start(claude, _folder, ChatProtocol.Arguments(_personaPrompt, resumeId), _window.Dispatcher);
         _host.Line += OnLine;
         _host.Exited += OnExited;
@@ -200,7 +206,6 @@ public sealed class ChatWindow
     {
         if (ChatProtocol.InitSessionId(line) is { } sessionId)
         {
-            _sawInit = true;
             _store.Save(_key, sessionId);
         }
         if (ChatProtocol.PermissionRequestOf(line) is { } request)
@@ -223,16 +228,7 @@ public sealed class ChatWindow
             return;
         }
 
-        var resumeFailed = _resumed && !_sawInit && code != 0;
         StopClaude();
-        // A resume that dies before the session starts means its transcript is gone: start over.
-        if (resumeFailed)
-        {
-            _store.Forget(_key);
-            StartClaude(resume: false, notice: "No pude reanudar la conversación anterior; empiezo una nueva.");
-            return;
-        }
-
         PostChat(new JsonObject { ["type"] = "chat-exit", ["code"] = code });
         WriteSession(code == 0 ? "idle" : "sad", code == 0 ? "esperando" : "falló la charla");
     }
@@ -314,12 +310,13 @@ public sealed class ChatWindow
 
     private void PostPet(JsonObject message) => _pet.CoreWebView2?.PostWebMessageAsJson(message.ToJsonString());
 
-    private static IEnumerable<string> ReadTranscript(string sessionId)
+    // Null when there is nothing to resume. The id comes from our own chats.json, but it only becomes part of a path, and of
+    // claude's arguments, as a GUID: "--resume" takes an optional value, so one starting with "-" would be read as a flag.
+    private static IReadOnlyList<string>? TranscriptOf(string sessionId)
     {
-        // The id came from our own chats.json, but it still only becomes part of a path as a GUID.
         if (!Guid.TryParse(sessionId, out _) || !Directory.Exists(Program.ProjectsFolder))
         {
-            return [];
+            return null;
         }
 
         var path = Directory.EnumerateDirectories(Program.ProjectsFolder)
@@ -327,10 +324,11 @@ public sealed class ChatWindow
             .FirstOrDefault(File.Exists);
         try
         {
-            return path is null ? [] : File.ReadAllLines(path);
+            return path is null ? null : File.ReadAllLines(path);
         }
-        catch (IOException)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
+            // It is there: resume it, without the history on screen.
             return [];
         }
     }
