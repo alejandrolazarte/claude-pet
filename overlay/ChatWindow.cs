@@ -60,10 +60,15 @@ public sealed class ChatWindow
                 }
                 var core = _chat.CoreWebView2;
                 core.Settings.AreDefaultContextMenusEnabled = false;
+                // No F5 or Ctrl+R: the page gets its state only once, at chat-ready. Copy and paste still work.
+                core.Settings.AreBrowserAcceleratorKeysEnabled = false;
                 core.SetVirtualHostNameToFolderMapping(
                     Program.Host, Path.Combine(AppContext.BaseDirectory, "web"), CoreWebView2HostResourceAccessKind.Allow);
+                var page = $"https://{Program.Host}/chat.html";
+                // A dropped file or link would replace the page, and the new one could still post chat messages to C#.
+                core.NavigationStarting += (_, e) => e.Cancel = e.Uri != page;
                 core.WebMessageReceived += (_, e) => OnChatMessage(e.WebMessageAsJson);
-                core.Navigate($"https://{Program.Host}/chat.html");
+                core.Navigate(page);
             }
             // Closed while WebView2 was still starting: Shutdown already disposed it.
             catch (Exception) when (_closing)
