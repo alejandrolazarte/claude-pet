@@ -177,3 +177,12 @@ C# es un conducto: reenvía cada línea JSON del proceso, sin interpretarla, a l
   - `overlay/web/src/App.tsx` y `bridge.ts`: globo de permiso del pet.
   - `.github/workflows/ci.yml`: correr `overlay.Tests`.
   - `overlay/README.md` y `README.md`.
+
+## Cambios después de probarlo (2026-10-16)
+
+Lo que cambió al usarlo; manda sobre lo de arriba.
+
+- **Sin carpeta y aislado.** La charla es para conversar (el clima, noticias), no para trabajar en los repos: **Hablar** abre sin preguntar, en `%LOCALAPPDATA%\claude-pet\chats\<personaje>\`, con `--safe-mode`. No corren los hooks, los plugins, los servidores MCP ni los `CLAUDE.md` del usuario; la búsqueda web y el login sí. Ya no hay `lastFolder` en `chats.json` ni `folder` en `chat-init`, y `repo` es `<nombre> · chat`.
+- **Personalidad.** El prompt base es "Eres <nombre>." más las reglas: primera persona, no presentarse como Claude salvo que le pregunten en serio si es una IA, texto plano (el globo no interpreta Markdown) y trabajo exacto. Cada personaje trae su `persona` en `character.json`. Claude Code guarda el prompt al empezar la conversación, así que un cambio se nota en la próxima conversación nueva.
+- **Diseño v2 (Figma).** Cabecera con avatar y estado en vivo, pasos agrupados (hecho, en curso, denegado), diffs de Edit y Write, tarjeta de permiso con cuenta regresiva, indicador de escritura, caja tipo píldora y **+** en lugar de **Nueva conversación**.
+- **WebView2 por composición**, como el del pet: la ventana clásica fallaba con 0x8007139F en el mismo proceso del navegador.
