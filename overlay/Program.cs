@@ -40,6 +40,10 @@ public static class Program
             ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".claude"),
         "projects");
     private static readonly Dictionary<string, string> _transcripts = [];
+    internal const string Host = _host;
+    internal static string SettingsFolder => _settingsFolder;
+    internal static string SessionsFolder => _sessionsFolder;
+    internal static string ProjectsFolder => _projectsFolder;
     // Kept in fields: a MediaPlayer nothing references can be collected mid-sound. Two, so a finish chime
     // does not cut the music a tap started.
     private static MediaPlayer? _donePlayer;
@@ -174,7 +178,9 @@ public static class Program
         titles.Tick += (_, _) => PostSessions(webView);
         titles.Start();
 
-        new Application().Run(window);
+        // The chat window would otherwise keep the app alive after the pet is closed.
+        window.Closed += (_, _) => ChatWindow.CloseCurrent();
+        new Application { ShutdownMode = ShutdownMode.OnMainWindowClose }.Run(window);
     }
 
     private static void OnPageMessage(Window window, WebView2CompositionControl webView, string json)
@@ -235,6 +241,9 @@ public static class Program
             characters.Items.Add(item);
         }
 
+        var talk = new MenuItem { Header = "Hablar" };
+        talk.Click += (_, _) => OpenChat(window, webView, request.Clone());
+
         var caption = request.GetProperty("caption").GetString();
         var show = new MenuItem { Header = "Mostrar" };
         foreach (var (mode, label) in new[] { ("repo", "Proyecto"), ("title", "Título de la sesión") })
@@ -286,6 +295,7 @@ public static class Program
 
         var menu = new ContextMenu { Placement = PlacementMode.MousePoint, PlacementTarget = window };
         menu.Items.Add(characters);
+        menu.Items.Add(talk);
         menu.Items.Add(show);
         menu.Items.Add(size);
         menu.Items.Add(sound);
@@ -294,6 +304,23 @@ public static class Program
         // Saved once the menu closes, not on every step of the slider.
         menu.Closed += (_, _) => SaveSetting("sizes", sizes.DeepClone());
         menu.IsOpen = true;
+    }
+
+    private static void OpenChat(Window window, WebView2CompositionControl webView, JsonElement request)
+    {
+        var current = request.GetProperty("current").GetString() ?? "blob";
+        if (!_characterId.IsMatch(current))
+        {
+            return;
+        }
+
+        var label = request.GetProperty("characters").EnumerateArray()
+            .Where(character => character.GetProperty("id").GetString() == current)
+            .Select(character => character.GetProperty("label").GetString())
+            .FirstOrDefault() ?? current;
+        var persona = TextOf(ReadJsonObject(Path.Combine(_charactersFolder, current, "character.json")), "persona");
+        var name = current == "blob" ? ChatProtocol.BlobName : label;
+        ChatWindow.Open(window, webView, current, label, ChatProtocol.PersonaPrompt(name, persona));
     }
 
     private static void PostArt(WebView2CompositionControl webView)
