@@ -307,7 +307,7 @@ public sealed class ChatWindow
         {
             File.WriteAllText(Path.Combine(Program.SessionsFolder, $"chat-{_characterId}.json"), session.ToJsonString());
         }
-        catch (IOException)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             // The pet misses one state; the chat itself is unaffected.
         }

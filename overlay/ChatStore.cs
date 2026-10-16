@@ -28,8 +28,15 @@ public sealed class ChatStore(string path)
     {
         var json = Read();
         change(json);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, json.ToJsonString());
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllText(path, json.ToJsonString());
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            // This runs on every turn, on the pet's thread: the chat is just not resumed next time.
+        }
     }
 
     private JsonObject Read()
@@ -38,7 +45,7 @@ public sealed class ChatStore(string path)
         {
             return File.Exists(path) && JsonNode.Parse(File.ReadAllText(path)) is JsonObject json ? json : [];
         }
-        catch (Exception exception) when (exception is IOException or JsonException)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or JsonException)
         {
             // A broken file starts over: the chats are just not resumed.
             return [];

@@ -26,6 +26,22 @@ public sealed class ChatStoreTests : IDisposable
     }
 
     [Fact]
+    public void A_save_that_cannot_be_written_is_lost_instead_of_crashing_the_pet()
+    {
+        var folder = Path.GetDirectoryName(_path)!;
+        File.WriteAllText(folder, "a file where the folder should be");
+        try
+        {
+            Should.NotThrow(() => new ChatStore(_path).Save("toji|c:\\repo", "715acc71"));
+            new ChatStore(_path).SessionFor("toji|c:\\repo").ShouldBeNull();
+        }
+        finally
+        {
+            File.Delete(folder);
+        }
+    }
+
+    [Fact]
     public void Saved_sessions_survive_a_new_store()
     {
         new ChatStore(_path).Save("toji|c:\\repo", "715acc71");
