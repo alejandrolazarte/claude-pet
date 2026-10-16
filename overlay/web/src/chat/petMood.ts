@@ -1,5 +1,6 @@
 import { activityOf } from '../../../../plugin/hooks/activity'
 import type { Mood } from '../sessions'
+import { toolSummary } from './chatReducer'
 import { isJson, parseLine, text } from './json'
 
 export type PetMood = { mood: Mood; label: string }
@@ -16,9 +17,12 @@ export function moodOfLine(line: string): PetMood | undefined {
   }
   if (event.type === 'control_request') {
     const request = isJson(event.request) ? event.request : {}
+    const tool = text(request.tool_name)
+    // From the input: for Bash the request's description is the model's own words, not the command.
+    const summary = toolSummary(tool, isJson(request.input) ? request.input : {})
 
     return request.subtype === 'can_use_tool'
-      ? { mood: 'asking', label: `te pregunta: ${text(request.description) || text(request.tool_name)}` }
+      ? { mood: 'asking', label: `te pregunta: ${summary !== tool ? summary : text(request.description) || tool}` }
       : undefined
   }
   if (event.type === 'assistant') {

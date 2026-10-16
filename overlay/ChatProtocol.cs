@@ -129,9 +129,29 @@ public static class ChatProtocol
         {
             return null;
         }
-        var description = TextOf(request, "description") ?? TextOf(request, "display_name") ?? TextOf(request, "tool_name") ?? "una herramienta";
+        var description = SummaryOf(request["input"])
+            ?? TextOf(request, "description") ?? TextOf(request, "display_name") ?? TextOf(request, "tool_name") ?? "una herramienta";
 
         return new PermissionRequest(requestId, description, request["input"]?.DeepClone(), request["permission_suggestions"]?.DeepClone());
+    }
+
+    // What the request really does, read from its input like the chat's toolSummary: for Bash, the CLI's description is the model's own words.
+    private static string? SummaryOf(JsonNode? input)
+    {
+        if (input is not JsonObject json)
+        {
+            return null;
+        }
+        if (TextOf(json, "command") is { } command)
+        {
+            return $"$ {(command.Length > 120 ? $"{command[..120]}…" : command)}";
+        }
+        if ((TextOf(json, "file_path") ?? TextOf(json, "notebook_path")) is { } path)
+        {
+            return Path.GetFileName(Path.TrimEndingDirectorySeparator(path)) is { Length: > 0 } name ? name : path;
+        }
+
+        return TextOf(json, "url");
     }
 
     public static IReadOnlyList<HistoryItem> History(IEnumerable<string> transcriptLines)

@@ -30,8 +30,14 @@ export function toolSummary(name: string, input: Json): string {
   return typeof input.url === 'string' ? input.url : name
 }
 
-export const permissionDetail = (input: Json, description: string) =>
-  typeof input.command === 'string' ? `$ ${input.command}` : description
+export function permissionDetail(name: string, input: Json, description: string): string {
+  if (typeof input.command === 'string') {
+    return `$ ${input.command}`
+  }
+  const summary = toolSummary(name, input)
+
+  return summary !== name ? summary : description
+}
 
 const MAX_DIFF_LINES = 12
 
@@ -159,7 +165,7 @@ function onLine(state: ChatState, line: string, at: number): ChatState {
         requestId: event.request_id,
         toolUseId: text(request.tool_use_id),
         tool,
-        detail: permissionDetail(input, text(request.description) || tool),
+        detail: permissionDetail(tool, input, text(request.description) || tool),
         canAllowEdits: EDIT_TOOLS.has(tool) && suggestions.some(isSessionEdits),
         askedAt: at,
         diff: diffOf(tool, input),

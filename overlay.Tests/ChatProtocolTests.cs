@@ -231,6 +231,23 @@ public class ChatProtocolTests
     }
 
     [Fact]
+    public void PermissionRequestOf_describes_a_command_by_the_command_itself_not_by_the_models_words()
+    {
+        var request = ChatProtocol.PermissionRequestOf(BashRequest)!;
+
+        request.Description.ShouldBe("$ rm C:/temp/x.log");
+    }
+
+    [Fact]
+    public void PermissionRequestOf_cuts_a_long_command_short()
+    {
+        var request = ChatProtocol.PermissionRequestOf(BashRequest.Replace("rm C:/temp/x.log", new string('a', 300)))!;
+
+        request.Description.Length.ShouldBe(2 + 120 + 1);
+        request.Description.ShouldEndWith("…");
+    }
+
+    [Fact]
     public void PermissionRequestOf_reads_the_probe_request()
     {
         var request = ChatProtocol.PermissionRequestOf(ProbeRequest)!;

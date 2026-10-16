@@ -13,6 +13,20 @@ describe('moodOfLine', () => {
     expect(mood).toEqual({ mood: 'asking', label: 'te pregunta: hola.txt' })
   })
 
+  it('names the real command it asks about, not the description the model wrote for it', () => {
+    // Act
+    const mood = moodOfLine(
+      json({
+        type: 'control_request',
+        request_id: 'r1',
+        request: { subtype: 'can_use_tool', tool_name: 'Bash', input: { command: 'rm x.log', description: 'Ver la versión' }, description: 'Ver la versión' },
+      }),
+    )
+
+    // Assert
+    expect(mood).toEqual({ mood: 'asking', label: 'te pregunta: $ rm x.log' })
+  })
+
   it('labels tools like the mod does', () => {
     // Act
     const mood = moodOfLine(json({ type: 'assistant', message: { content: [{ type: 'tool_use', id: 't', name: 'Edit', input: { file_path: 'C:\\repo\\foo.ts' } }] } }))

@@ -139,7 +139,7 @@ describe('chatReducer', () => {
         requestId: 'r1',
         toolUseId: 'toolu_r1',
         tool: 'Write',
-        detail: 'hola.txt',
+        detail: 'a.txt',
         canAllowEdits: true,
         askedAt: 1000,
         diff: { file: 'a.txt', added: 1, removed: 0, lines: [{ kind: 'add', text: 'a' }], hidden: 0 },
