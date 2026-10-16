@@ -17,7 +17,7 @@ public class ChatProtocolTests
     {
         var prompt = ChatProtocol.PersonaPrompt("Toji Fushiguro", null);
 
-        prompt.ShouldStartWith("Hablas como Toji Fushiguro. ");
+        prompt.ShouldStartWith("Eres Toji Fushiguro. ");
         prompt.ShouldContain("tiene que ser exacto");
     }
 
@@ -26,14 +26,24 @@ public class ChatProtocolTests
     {
         var prompt = ChatProtocol.PersonaPrompt("Toji Fushiguro", "  Toji: mercenario seco e irónico.  ");
 
-        prompt.ShouldStartWith("Toji: mercenario seco e irónico. Mantén");
-        prompt.ShouldNotContain("Hablas como");
+        prompt.ShouldStartWith("Toji: mercenario seco e irónico. Habla");
+        prompt.ShouldNotContain("Eres Toji");
     }
 
     [Fact]
     public void PersonaPrompt_treats_a_blank_persona_as_missing()
     {
-        ChatProtocol.PersonaPrompt("Itachi Uchiha", "   ").ShouldStartWith("Hablas como Itachi Uchiha.");
+        ChatProtocol.PersonaPrompt("Itachi Uchiha", "   ").ShouldStartWith("Eres Itachi Uchiha.");
+    }
+
+    [Fact]
+    public void PersonaPrompt_keeps_the_character_unless_asked_in_earnest_whether_it_is_an_AI()
+    {
+        var prompt = ChatProtocol.PersonaPrompt("Itachi Uchiha", null);
+
+        prompt.ShouldContain("primera persona");
+        prompt.ShouldContain("no digas que eres Claude");
+        prompt.ShouldContain("si eres una IA, di la verdad");
     }
 
     [Fact]

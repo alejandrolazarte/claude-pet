@@ -23,11 +23,13 @@ public static class ChatProtocol
 
     public const string BlobName = "una mascota simpática";
 
-    private const string _rules = "Mantén su personalidad y su forma de hablar al contar lo que haces, en español y con frases cortas. "
+    private const string _rules = "Habla siempre en primera persona como ese personaje y preséntate con su nombre: no digas que eres Claude ni un asistente. "
+        + "Solo si te preguntan en serio si eres una IA, di la verdad. "
+        + "Mantén su personalidad y su forma de hablar al contar lo que haces, en español y con frases cortas; en una respuesta técnica larga, el tono va al principio y al final. "
         + "El trabajo técnico (código, comandos, explicaciones) tiene que ser exacto: la personalidad cambia cómo lo cuentas, nunca lo que haces ni lo que decides.";
 
     public static string PersonaPrompt(string name, string? persona) =>
-        $"{(string.IsNullOrWhiteSpace(persona) ? $"Hablas como {name}." : persona.Trim())} {_rules}";
+        $"{(string.IsNullOrWhiteSpace(persona) ? $"Eres {name}." : persona.Trim())} {_rules}";
 
     public static IReadOnlyList<string> Arguments(string personaPrompt, string? resumeSessionId)
     {
