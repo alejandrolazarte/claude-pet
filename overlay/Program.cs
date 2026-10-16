@@ -216,6 +216,11 @@ public static class Program
             case "poke":
                 TogglePokeSound(root.TryGetProperty("character", out var poked) ? poked.GetString() : null);
                 break;
+            case "permission-answer":
+                ChatWindow.Current?.Answer(
+                    root.GetProperty("requestId").GetString() ?? "",
+                    root.GetProperty("decision").GetString() == "allow" ? PermissionDecision.Allow : PermissionDecision.Deny);
+                break;
         }
     }
 

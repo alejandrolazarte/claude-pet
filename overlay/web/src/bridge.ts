@@ -8,6 +8,8 @@ export type HostMessage =
   | { type: 'caption'; mode: string | null }
   | { type: 'sizes'; sizes: Record<string, unknown> | null }
   | { type: 'art'; characters: { id: string; label: string; svg: string; viewBox: string | null; parts: unknown; outline: unknown }[] }
+  | { type: 'permission'; requestId: string; description: string }
+  | { type: 'permission-done'; requestId: string }
 
 export type PageMessage =
   | { type: 'ready' }
@@ -16,6 +18,7 @@ export type PageMessage =
   | { type: 'size'; width: number; height: number }
   | { type: 'done'; character: CharacterId }
   | { type: 'poke'; character: CharacterId }
+  | { type: 'permission-answer'; requestId: string; decision: 'allow' | 'deny' }
 
 type WebView = {
   postMessage: (message: PageMessage) => void
