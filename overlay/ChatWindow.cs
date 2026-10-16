@@ -45,15 +45,30 @@ public sealed class ChatWindow
         _window = new Window { Title = label, Width = 520, Height = 680, Content = _chat };
         _window.Loaded += async (_, _) =>
         {
-            // Same data folder and options as the pet's WebView2, so both share one browser process.
-            var environment = await CoreWebView2Environment.CreateAsync(userDataFolder: Path.Combine(Program.SettingsFolder, "webview2"));
-            await _chat.EnsureCoreWebView2Async(environment);
-            var core = _chat.CoreWebView2;
-            core.Settings.AreDefaultContextMenusEnabled = false;
-            core.SetVirtualHostNameToFolderMapping(
-                Program.Host, Path.Combine(AppContext.BaseDirectory, "web"), CoreWebView2HostResourceAccessKind.Allow);
-            core.WebMessageReceived += (_, e) => OnChatMessage(e.WebMessageAsJson);
-            core.Navigate($"https://{Program.Host}/chat.html");
+            try
+            {
+                // Same data folder and options as the pet's WebView2, so both share one browser process.
+                var environment = await CoreWebView2Environment.CreateAsync(userDataFolder: Path.Combine(Program.SettingsFolder, "webview2"));
+                if (_closing)
+                {
+                    return;
+                }
+                await _chat.EnsureCoreWebView2Async(environment);
+                if (_closing)
+                {
+                    return;
+                }
+                var core = _chat.CoreWebView2;
+                core.Settings.AreDefaultContextMenusEnabled = false;
+                core.SetVirtualHostNameToFolderMapping(
+                    Program.Host, Path.Combine(AppContext.BaseDirectory, "web"), CoreWebView2HostResourceAccessKind.Allow);
+                core.WebMessageReceived += (_, e) => OnChatMessage(e.WebMessageAsJson);
+                core.Navigate($"https://{Program.Host}/chat.html");
+            }
+            // Closed while WebView2 was still starting: Shutdown already disposed it.
+            catch (Exception) when (_closing)
+            {
+            }
         };
         _window.Closed += (_, _) => Shutdown();
         _expiry.Tick += (_, _) =>
@@ -94,6 +109,12 @@ public sealed class ChatWindow
 
     private void OnChatMessage(string json)
     {
+        // A page timer that fires after closing would start claude again or overwrite the pet's "gone".
+        if (_closing)
+        {
+            return;
+        }
+
         using var message = JsonDocument.Parse(json);
         var root = message.RootElement;
         switch (root.GetProperty("type").GetString())
@@ -235,6 +256,8 @@ public sealed class ChatWindow
         _expiry.Stop();
         StopClaude();
         WriteSession("gone", "");
+        // Closing the window does not free the control: its renderer and the page's timers would live on.
+        _chat.Dispose();
         Current = null;
     }
 
