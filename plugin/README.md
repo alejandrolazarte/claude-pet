@@ -34,7 +34,7 @@ Si la escritura del archivo falla, el mod sigue funcionando igual.
 
 ## Skill `add-character`
 
-`skills/add-character/` le enseña a Claude Code a agregar, renombrar o sacar personajes de la ventana cuando el usuario se lo pide ("agregá un personaje con esta imagen"). Usa `prepare-character.ps1`, que prepara la imagen con Edge headless: le saca el fondo a un SVG o a una imagen opaca sin animación, envuelve un PNG, GIF, WebP o JPEG en un SVG, corta un video WebM o MP4 (entero o un tramo) en hasta 30 cuadros y calcula un `viewBox` ajustado. Se ve en Claude Code como `pet:add-character`.
+`skills/add-character/` le enseña a Claude Code a agregar, renombrar o sacar personajes de la ventana cuando el usuario se lo pide ("agregá un personaje con esta imagen"). Usa `prepare-character.ps1`, que prepara la imagen con Edge headless: le saca el fondo a un SVG o a una imagen opaca sin animación, envuelve un PNG, GIF, WebP o JPEG en un SVG, corta un video WebM o MP4 (entero o un tramo) en hasta 30 cuadros (o los que pida `-Frames`, hasta 200) y calcula un `viewBox` ajustado. Se ve en Claude Code como `pet:add-character`.
 
 ## Skill `animate-character`
 
