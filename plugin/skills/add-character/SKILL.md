@@ -30,7 +30,7 @@ La ventana vigila esa carpeta: un personaje nuevo aparece en el menú del clic d
    Crea antes la carpeta del personaje. El script:
    - saca el fondo si el SVG tiene uno que cubre todo el lienzo, o si la imagen es opaca y sus cuatro esquinas son del mismo color o su borde es un degradé suave, como el azul de la tienda de Fortnite (borra desde los bordes, así el mismo color dentro del dibujo se queda; un escenario no se toca; las imágenes animadas conservan su fondo),
    - envuelve un PNG, GIF, WebP o JPEG en un SVG,
-   - corta un video (o el tramo entre `-Start` y `-End`) en hasta 30 cuadros (unos 10 por segundo), recortados a donde está el personaje y achicados a 240 px; la ventana los pasa más rápido o más lento según el estado. Si el video trae fondo transparente lo conserva; si no, le saca el fondo a cada cuadro. Tarda unos 15 segundos,
+   - corta un video (o el tramo entre `-Start` y `-End`) en hasta 30 cuadros (unos 10 por segundo), recortados a donde está el personaje y achicados a 480 px; la ventana los pasa más rápido o más lento según el estado. Si el video trae fondo transparente lo conserva; si no, le saca el fondo a cada cuadro. Tarda unos 15 segundos,
    - calcula un `viewBox` ajustado al dibujo,
    - escribe `character.svg` e imprime un JSON con `viewBox`, `removedBackground`, `frames` y `bytes`.
 

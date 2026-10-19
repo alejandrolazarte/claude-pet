@@ -212,7 +212,8 @@ async function videoFrames() {
   }
   if (right < 0) { left = 0; top = 0; right = vw - 1; bottom = vh - 1; }
   const cw = right - left + 1, ch = bottom - top + 1;
-  const scale = Math.min(1, 240 / Math.max(cw, ch));
+  // 480 px keeps frames sharp at the 250 % size on a 125-150 % display (110 px base * 2.5 * 1.5 = 412 px).
+  const scale = Math.min(1, 480 / Math.max(cw, ch));
   const w = Math.round(cw * scale), h = Math.round(ch * scale);
   const pad = input.outline ? Math.ceil(3 * Math.max(w, h) / 110) : 0;
   const svg = document.createElementNS(ns, 'svg');
@@ -237,7 +238,7 @@ async function videoFrames() {
       values: [...Array(count).keys()].map(j => j === i ? 'visible' : 'hidden').join(';') }).forEach(([k, v]) => animate.setAttribute(k, v));
     group.appendChild(animate);
     const framed = input.outline ? withOutline(canvas) : canvas;
-    picture(group, framed.toDataURL('image/webp', 0.85), framed.width, framed.height);
+    picture(group, framed.toDataURL('image/webp', 0.92), framed.width, framed.height);
     svg.appendChild(group);
   }
   video = { duration, start: from, end: to, sheet: input.sheet ? sheet.toDataURL('image/png') : undefined };
