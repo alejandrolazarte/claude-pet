@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { frameLoopSeconds, neutralFrameOf, parseParts, parseViewBox, partSwing } from './svgLayout'
+import { frameLoopSeconds, neutralFrameOf, parseParts, parseViewBox, partSwing, pokeMs } from './svgLayout'
 
 describe('neutralFrameOf', () => {
   it('finds the frame-by-frame animation and the frame shown first', () => {
@@ -163,5 +163,25 @@ describe('frameLoopSeconds', () => {
 
     // Assert
     expect(loops).toEqual(['still', 'still', 'still', 'still'])
+  })
+})
+
+describe('pokeMs', () => {
+  it('lasts one whole happy loop, so a video cut plays to its last frame', () => {
+    // Act
+    const thirty = pokeMs(30, 1200)
+    const nineteen = pokeMs(19, 1200)
+
+    // Assert
+    expect(thirty).toBe(2400)
+    expect(nineteen).toBe(1520)
+  })
+
+  it('never ends before the hop, for short loops or art without frames', () => {
+    // Act
+    const durations = [0, 2, 5, 15].map(frames => pokeMs(frames, 1200))
+
+    // Assert
+    expect(durations).toEqual([1200, 1200, 1200, 1200])
   })
 })
