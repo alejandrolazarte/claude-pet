@@ -4,7 +4,7 @@ import { parseArt } from './art'
 import { frameLoopSeconds, neutralFrameOf, parseParts, parseViewBox, partSwing, type Box } from './svgLayout'
 import type { Mood } from './sessions'
 
-export type GenericArt = { box: Box; outline: boolean; html: (mood: Mood) => string }
+export type GenericArt = { box: Box; outline: boolean; frames: number; html: (mood: Mood) => string }
 
 const SIZE = 110
 
@@ -55,6 +55,7 @@ export function genericArt(svg: string, viewBox: string | undefined, partsJson?:
   return {
     box,
     outline,
+    frames: neutral === undefined ? 0 : groups.length,
     html: mood => {
       let html = rendered.get(mood)
       if (html === undefined) {

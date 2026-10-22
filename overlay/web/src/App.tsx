@@ -6,6 +6,7 @@ import { Pet, type Art } from './Pet'
 import { genericArt } from './Generic'
 import { questionsAfter, type Question } from './permissions'
 import { movedBeyond, type Point } from './pointer'
+import { pokeMs } from './svgLayout'
 import { busiest, captionOf, finishedTask, moodDelayMs, visibleSessions, type CaptionMode, type Mood, type Session } from './sessions'
 
 const DRAG_PX = 4
@@ -78,6 +79,7 @@ export function App() {
   const available = availableCharacters({ custom: customCharacters })
   const character = resolveCharacter(savedCharacter, available)
   const scale = scaleOf(sizes, character)
+  const pokeDuration = pokeMs(art.custom.get(character)?.frames ?? 0, POKE_MS)
   const liveMood: Mood = shown?.mood ?? 'sleeping'
   const [mood, setMood] = useState<Mood>(liveMood)
 
@@ -101,10 +103,10 @@ export function App() {
     if (poke === undefined) {
       return
     }
-    const timer = setTimeout(() => setPoke(undefined), POKE_MS)
+    const timer = setTimeout(() => setPoke(undefined), pokeDuration)
 
     return () => clearTimeout(timer)
-  }, [poke])
+  }, [poke, pokeDuration])
 
   return (
     <div

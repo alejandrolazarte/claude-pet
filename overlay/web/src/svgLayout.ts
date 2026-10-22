@@ -45,6 +45,11 @@ export function frameLoopSeconds(mood: Mood, frames: number): number | 'still' {
   return cap ? Math.min(loop(seconds), Math.max(cap.seconds, Math.round(cap.ofWorking * loop(WORKING_FRAME_SECONDS) * 1000) / 1000)) : loop(seconds)
 }
 
+// A tap restarts the frames at happy speed: a hop alone would cut a 30-frame video cut halfway.
+export function pokeMs(frames: number, hopMs: number): number {
+  return Math.max(hopMs, Math.round((FRAME_SECONDS.happy as number) * frames * 1000))
+}
+
 export function parseViewBox(text: string | undefined): Box | undefined {
   const numbers = (text ?? '').trim().split(/[\s,]+/).filter(Boolean).map(Number)
   if (numbers.length !== 4 || numbers.some(n => !Number.isFinite(n))) {

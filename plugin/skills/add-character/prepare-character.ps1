@@ -1,8 +1,9 @@
 # Prepares an image as a claude-pet character: an SVG (its full-canvas background removed), a PNG, GIF,
 # WebP or JPEG (wrapped in an SVG) or a WebM or MP4 (cut into up to 30 frames), plus a tight viewBox. Measures
 # it with headless Edge, so it needs no other tools. Prints a JSON summary; writes the SVG to -Out.
-#   Videos only: -Start/-End keep a stretch of it, in seconds (End 0 = to the end); -Sheet writes a PNG with
-#   every frame numbered and timed, to pick that stretch.
+#   Videos only: -Start/-End keep a stretch of it, in seconds (End 0 = to the end); -Frames raises the cap of 30
+#   frames, for a long video whose quick moments would fall between frames; -Sheet writes a PNG with every frame
+#   numbered and timed, to pick that stretch.
 #   Videos and still images: -Outline paints a light edge around the figure into the pictures, once, instead of
 #   the window's CSS outline, which redraws on every frame of an animation. -KeepBackdrop leaves a thin band of the
 #   removed background around the figure, as an edge in its own color.
@@ -11,6 +12,7 @@ param(
     [Parameter(Mandatory)] [string] $Out,
     [double] $Start = 0,
     [double] $End = 0,
+    [ValidateRange(2, 200)] [int] $Frames = 30,
     [string] $Sheet,
     [switch] $Outline,
     [switch] $KeepBackdrop
@@ -31,7 +33,7 @@ elseif ($imageTypes.ContainsKey($extension)) {
     $image = @{ kind = 'image'; animated = [bool]$animated; outline = [bool]$Outline; keepBackdrop = [bool]$KeepBackdrop; text = "data:$($imageTypes[$extension]);base64,$([Convert]::ToBase64String($bytes))" }
 }
 elseif ($videoTypes.ContainsKey($extension)) {
-    $image = @{ kind = 'video'; outline = [bool]$Outline; keepBackdrop = [bool]$KeepBackdrop; start = $Start; end = $End; sheet = [bool]$Sheet; text = "data:$($videoTypes[$extension]);base64,$([Convert]::ToBase64String([IO.File]::ReadAllBytes($Source)))" }
+    $image = @{ kind = 'video'; outline = [bool]$Outline; keepBackdrop = [bool]$KeepBackdrop; start = $Start; end = $End; frames = $Frames; sheet = [bool]$Sheet; text = "data:$($videoTypes[$extension]);base64,$([Convert]::ToBase64String([IO.File]::ReadAllBytes($Source)))" }
 }
 else {
     throw "Unsupported file type '$extension': use .svg, .png, .gif, .webp, .jpg, .webm or .mp4"
@@ -195,7 +197,7 @@ async function videoFrames() {
   const from = Math.min(Math.max(0, input.start), duration), to = input.end > 0 ? Math.min(input.end, duration) : duration;
   if (to - from < 0.1) throw new Error('the stretch ' + from + '-' + to + 's is empty; the video lasts ' + duration + 's');
   const length = to - from, vw = player.videoWidth, vh = player.videoHeight;
-  const count = Math.max(2, Math.min(30, Math.round(length * 10)));
+  const count = Math.max(2, Math.min(input.frames, Math.round(length * 10)));
   const times = [...Array(count).keys()].map(i => from + length * i / count);
   const canvases = [];
   // The figure often fills a small part of the frame: crop to where it is in any frame, then shrink.
@@ -212,7 +214,8 @@ async function videoFrames() {
   }
   if (right < 0) { left = 0; top = 0; right = vw - 1; bottom = vh - 1; }
   const cw = right - left + 1, ch = bottom - top + 1;
-  const scale = Math.min(1, 240 / Math.max(cw, ch));
+  // 480 px keeps frames sharp at the 250 % size on a 125-150 % display (110 px base * 2.5 * 1.5 = 412 px).
+  const scale = Math.min(1, 480 / Math.max(cw, ch));
   const w = Math.round(cw * scale), h = Math.round(ch * scale);
   const pad = input.outline ? Math.ceil(3 * Math.max(w, h) / 110) : 0;
   const svg = document.createElementNS(ns, 'svg');
@@ -237,7 +240,7 @@ async function videoFrames() {
       values: [...Array(count).keys()].map(j => j === i ? 'visible' : 'hidden').join(';') }).forEach(([k, v]) => animate.setAttribute(k, v));
     group.appendChild(animate);
     const framed = input.outline ? withOutline(canvas) : canvas;
-    picture(group, framed.toDataURL('image/webp', 0.85), framed.width, framed.height);
+    picture(group, framed.toDataURL('image/webp', 0.92), framed.width, framed.height);
     svg.appendChild(group);
   }
   video = { duration, start: from, end: to, sheet: input.sheet ? sheet.toDataURL('image/png') : undefined };
