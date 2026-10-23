@@ -37,11 +37,17 @@ La ventana vigila esa carpeta: un personaje nuevo aparece en el menú del clic d
    Usa Microsoft Edge en modo headless para medir; no hace falta instalar nada.
 
    **Si es un video**, corré el script primero con `-Sheet "$env:TEMP\claude-pet-sheet.png"`: además imprime `duration` y guarda una hoja con cada cuadro numerado y su segundo. **Mirá la hoja.** Si el video tiene partes que no sirven para un personaje que se repite en loop (explosiones que llenan el cuadro, cambios de ropa, entradas y salidas), proponele al usuario un tramo y volvé a correrlo con `-Start <segundos> -End <segundos>`. Un tramo corto en una pose (2 a 3 segundos) queda más grande y con cuadros más seguidos que el video entero, porque los 30 cuadros se reparten en menos tiempo y el recorte se ajusta solo a ese tramo. Elegí un tramo donde el último cuadro se parezca al primero, así el loop no salta. Si el usuario quiere el video entero y tiene un momento rápido (una explosión, una transformación) que cae entre dos cuadros, subí el tope con `-Frames 100`: los cuadros salen más seguidos, el loop dura más (la ventana le da a cada cuadro el mismo tiempo) y cada cuadro suma unos 20 KB, así que mirá que `bytes` no pase de 4 MB.
-6. **Escribir `character.json`** con el `label` elegido y el `viewBox` que imprimió el script:
+6. **Escribir `character.json`** con el `label` elegido, el `viewBox` que imprimió el script y una `persona`:
 
    ```json
-   { "label": "Goku", "viewBox": "576.9 222.6 3126.7 3426.5" }
+   {
+     "label": "Goku",
+     "viewBox": "576.9 222.6 3126.7 3426.5",
+     "persona": "Eres Goku. Hablas con alegría y sencillez, siempre con ganas de medirte con alguien fuerte. Tratas al usuario como a un amigo. Nunca eres cruel."
+   }
    ```
+
+   La `persona` es cómo es el personaje en el chat **Hablar**: tres o cuatro frases en segunda persona ("Eres …") sobre quién es, cómo habla (registro, largo de las frases, muletillas), cómo trata al usuario y qué no hace nunca. Escribila con tus palabras, sin citas textuales de la obra. Si es un personaje conocido, basate en cómo es; si no, preguntale al usuario cómo quiere que sea. Mostrásela y ajustala si quiere.
 
 7. **Revisar el tamaño.** Si `bytes` pasa de 4 MB (4194304), la ventana ignora el personaje. Pedile al usuario una imagen más chica.
 8. **Contarle al usuario** que ya puede elegirlo con clic derecho sobre el bicho → **Personaje** → el nombre. Si `removedBackground` es `true`, avisale que se quitó un fondo; si la imagen se ve cortada o con un borde raro, ajustá el `viewBox` en `character.json` (agrandándolo) y la ventana se actualiza sola. Si el personaje es casi todo negro u oscuro, ofrecele un borde claro que sigue la silueta, para que se vea sobre un escritorio oscuro. Para un video o una imagen fija, volvé a correr el script con `-Outline`: pinta el borde en los cuadros una sola vez. Para un SVG, agregá `"outline": true` a `character.json`; ese borde lo calcula la ventana en cada cuadro y gasta bastante CPU si el personaje está animado. Si el fondo que se quitó era un degradé de color (un video de la tienda de Fortnite), ofrecele también `-KeepBackdrop`: deja una franja finita de ese fondo alrededor de la silueta, como contorno de su color, y disimula los huecos de fondo encerrados (entre un brazo y el cuerpo) que el borrado no alcanza.
@@ -55,6 +61,7 @@ Un personaje puede sonar cuando una sesión de Claude termina una tarea (pasa a 
 
 - **Sacar:** borrá la carpeta `%LOCALAPPDATA%\claude-pet\characters\<id>\` (confirmá con el usuario antes). Si era el elegido, la ventana pasa al primero disponible.
 - **Renombrar:** cambiá `label` en su `character.json`. No cambies el nombre de la carpeta: es el id que quedó guardado como elección del usuario.
+- **Cambiar la personalidad:** cambiá `persona` en su `character.json`. Se nota en la próxima conversación nueva de **Hablar** (el botón **+** del chat).
 
 ## Seguridad
 

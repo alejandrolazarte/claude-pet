@@ -4,6 +4,7 @@ import { onHostMessage, send } from './bridge'
 import { availableCharacters, resolveCharacter, scaleOf } from './characters'
 import { Pet, type Art } from './Pet'
 import { genericArt } from './Generic'
+import { questionsAfter, type Question } from './permissions'
 import { movedBeyond, type Point } from './pointer'
 import { pokeMs } from './svgLayout'
 import { busiest, captionOf, finishedTask, moodDelayMs, visibleSessions, type CaptionMode, type Mood, type Session } from './sessions'
@@ -21,6 +22,7 @@ export function App() {
   const [customCharacters, setCustomCharacters] = useState<{ id: string; label: string }[]>([])
   const [caption, setCaption] = useState<CaptionMode>('repo')
   const [sizes, setSizes] = useState<Record<string, unknown> | null>(null)
+  const [questions, setQuestions] = useState<Question[]>([])
   const pets = useRef<HTMLDivElement>(null)
   const moods = useRef<Record<string, Session['mood']>>({})
   // Where the left button went down, until it moves far enough to be a drag.
@@ -44,6 +46,8 @@ export function App() {
       } else if (message.type === 'art') {
         setArt({ custom: new Map(message.characters.map(c => [c.id, genericArt(c.svg, c.viewBox ?? undefined, c.parts, c.outline === true)])) })
         setCustomCharacters(message.characters.map(({ id, label }) => ({ id, label })))
+      } else if (message.type === 'permission' || message.type === 'permission-done') {
+        setQuestions(current => questionsAfter(current, message))
       }
     })
     send({ type: 'ready' })
@@ -135,6 +139,16 @@ export function App() {
         send({ type: 'menu', characters: available, current: character, caption })
       }}
     >
+      {questions[0] && (
+        // Stopped here: a press on the bubble must not start a drag or count as a tap on the pet.
+        <div className="permission-bubble" onMouseDown={event => event.stopPropagation()} onMouseUp={event => event.stopPropagation()}>
+          <span>{questions[0].description}</span>
+          <div>
+            <button onClick={() => send({ type: 'permission-answer', requestId: questions[0]!.requestId, decision: 'allow' })}>Permitir</button>
+            <button onClick={() => send({ type: 'permission-answer', requestId: questions[0]!.requestId, decision: 'deny' })}>Denegar</button>
+          </div>
+        </div>
+      )}
       {shown === undefined ? (
         <Pet art={art} character={character} scale={scale} mood={mood} poke={poke} label="sin sesiones" />
       ) : (

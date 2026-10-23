@@ -26,6 +26,8 @@ jobs:
           npm test
       - name: Window (WPF)
         run: dotnet build overlay/PetOverlay.csproj -c Release
+      - name: Window tests (xUnit)
+        run: dotnet test overlay.Tests/overlay.Tests.csproj -c Release
 
   plugin:
     runs-on: windows-latest
