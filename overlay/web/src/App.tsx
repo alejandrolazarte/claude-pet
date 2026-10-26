@@ -70,9 +70,18 @@ export function App() {
     if (!element) {
       return
     }
-    const observer = new ResizeObserver(() =>
-      send({ type: 'size', width: Math.ceil(element.scrollWidth), height: Math.ceil(element.scrollHeight) }),
-    )
+    const observer = new ResizeObserver(() => {
+      // The character, right above its caption: the window keeps it in place while the bubble comes and goes.
+      const figure = element.querySelector('.pet > .footer')?.previousElementSibling?.getBoundingClientRect()
+      const box = element.getBoundingClientRect()
+      send({
+        type: 'size',
+        width: Math.ceil(element.scrollWidth),
+        height: Math.ceil(element.scrollHeight),
+        anchorX: figure ? figure.left - box.left : 0,
+        anchorY: figure ? figure.top - box.top : 0,
+      })
+    })
     observer.observe(element)
 
     return () => observer.disconnect()
@@ -83,6 +92,13 @@ export function App() {
   const available = availableCharacters({ custom: customCharacters })
   const character = resolveCharacter(savedCharacter, available)
   const scale = scaleOf(sizes, character)
+  // A fixed room above the character: the bubble shows up inside it, so the window keeps its size and the character
+  // never jumps for the frame the window takes to follow the page. Its transparent pixels let clicks through.
+  const stepsRoom = areStepsOn && (
+    <div className="steps-room">
+      {shown?.steps?.length ? <StepsBubble heading={captionOf(shown, caption)} steps={shown.steps} /> : null}
+    </div>
+  )
   const pokeDuration = pokeMs(art.custom.get(character)?.frames ?? 0, POKE_MS)
   const liveMood: Mood = shown?.mood ?? 'sleeping'
   const [mood, setMood] = useState<Mood>(liveMood)
@@ -154,7 +170,7 @@ export function App() {
         </div>
       )}
       {shown === undefined ? (
-        <Pet art={art} character={character} scale={scale} mood={mood} poke={poke} label="sin sesiones" />
+        <Pet art={art} character={character} scale={scale} mood={mood} poke={poke} label="sin sesiones" bubble={stepsRoom} />
       ) : (
         <Pet
           art={art}
@@ -166,7 +182,7 @@ export function App() {
           heading={captionOf(shown, caption)}
           others={visible.length - 1}
           onOthersHover={setIsHovered}
-          bubble={areStepsOn && shown.steps?.length ? <StepsBubble heading={captionOf(shown, caption)} steps={shown.steps} /> : undefined}
+          bubble={stepsRoom}
         />
       )}
       {isHovered && visible.length > 0 && (

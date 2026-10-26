@@ -16,7 +16,7 @@ export type PageMessage =
   | { type: 'ready' }
   | { type: 'drag' }
   | { type: 'menu'; characters: Character[]; current: CharacterId; caption: CaptionMode }
-  | { type: 'size'; width: number; height: number }
+  | { type: 'size'; width: number; height: number; anchorX: number; anchorY: number }
   | { type: 'done'; character: CharacterId }
   | { type: 'poke'; character: CharacterId }
   | { type: 'permission-answer'; requestId: string; decision: 'allow' | 'deny' }
