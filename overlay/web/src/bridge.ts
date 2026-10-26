@@ -6,6 +6,7 @@ export type HostMessage =
   | { type: 'mouseleave' }
   | { type: 'character'; id: string | null }
   | { type: 'caption'; mode: string | null }
+  | { type: 'steps'; isOn: boolean }
   | { type: 'sizes'; sizes: Record<string, unknown> | null }
   | { type: 'art'; characters: { id: string; label: string; svg: string; viewBox: string | null; parts: unknown; outline: unknown }[] }
   | { type: 'permission'; requestId: string; description: string }

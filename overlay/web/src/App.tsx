@@ -6,6 +6,7 @@ import { Pet, type Art } from './Pet'
 import { genericArt } from './Generic'
 import { questionsAfter, type Question } from './permissions'
 import { movedBeyond, type Point } from './pointer'
+import { StepsBubble } from './StepsBubble'
 import { pokeMs } from './svgLayout'
 import { busiest, captionOf, finishedTask, moodDelayMs, visibleSessions, type CaptionMode, type Mood, type Session } from './sessions'
 
@@ -21,6 +22,7 @@ export function App() {
   const [art, setArt] = useState<Art>({ custom: new Map() })
   const [customCharacters, setCustomCharacters] = useState<{ id: string; label: string }[]>([])
   const [caption, setCaption] = useState<CaptionMode>('repo')
+  const [areStepsOn, setAreStepsOn] = useState(true)
   const [sizes, setSizes] = useState<Record<string, unknown> | null>(null)
   const [questions, setQuestions] = useState<Question[]>([])
   const pets = useRef<HTMLDivElement>(null)
@@ -41,6 +43,8 @@ export function App() {
         setSavedCharacter(message.id ?? undefined)
       } else if (message.type === 'caption') {
         setCaption(message.mode === 'title' ? 'title' : 'repo')
+      } else if (message.type === 'steps') {
+        setAreStepsOn(message.isOn)
       } else if (message.type === 'sizes') {
         setSizes(message.sizes)
       } else if (message.type === 'art') {
@@ -162,6 +166,7 @@ export function App() {
           heading={captionOf(shown, caption)}
           others={visible.length - 1}
           onOthersHover={setIsHovered}
+          bubble={areStepsOn && shown.steps?.length ? <StepsBubble heading={captionOf(shown, caption)} steps={shown.steps} /> : undefined}
         />
       )}
       {isHovered && visible.length > 0 && (

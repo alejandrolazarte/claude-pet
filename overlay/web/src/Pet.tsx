@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 
 import type { CharacterId } from './characters'
 import { Generic, PokeHeart, type GenericArt } from './Generic'
@@ -132,11 +132,13 @@ type PetProps = {
   heading?: string
   others?: number
   onOthersHover?: (isOver: boolean) => void
+  bubble?: ReactNode
 }
 
-export function Pet({ art, character, scale, mood, poke, label, heading, others = 0, onOthersHover }: PetProps) {
+export function Pet({ art, character, scale, mood, poke, label, heading, others = 0, onOthersHover, bubble }: PetProps) {
   return (
     <div className="pet">
+      {bubble}
       {art.custom.has(character) ? (
         <Generic art={art.custom.get(character)!} scale={scale} mood={mood} poke={poke} label={label} />
       ) : (

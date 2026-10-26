@@ -427,4 +427,78 @@ describe('pet', () => {
     })
     expect(JSON.parse(afterEnd?.text ?? '{}').mood).toBe('gone')
   })
+
+  test('shares the task list of the desktop app with the floating window, until the pet rests after the turn', async ($, on) => {
+    // Arrange
+    const clock = mock.clock(on, { now: 1000 })
+    mock.env(on, { TEMP: 'C:\\Temp' })
+    const writes: string[] = []
+    on('session.start', (_$, e) => ({ cwd: e.cwd }))
+    on('session.id', () => ({ value: 'abc-123' }))
+    on('session.root', () => ({ value: 'C:\\repos\\my-project' }))
+    on('fs.write', (_$, e) => {
+      writes.push(e.text)
+      return { value: undefined }
+    })
+    on('tool.call', () => ({ result: 'ok' }))
+    on('turn.complete', (_$, e) => ({ text: e.answer }))
+    await $.session.start({ cwd: 'C:\\repos\\my-project', surface: 'desktop', isInteractive: true })
+    const stepsNow = () => JSON.parse(writes.at(-1) ?? '{}').steps
+    const plan = (input: Record<string, unknown>) => $.tool.call({ tool: 'mcp__ccd_turn__update_plan', ...input } as never)
+
+    // Act
+    await plan({
+      items: [
+        { content: 'Leer', status: 'in_progress' },
+        { content: 'Probar', status: 'pending' },
+        { content: 'Publicar', status: 'pending' },
+      ],
+      scope: 'first_task',
+    })
+    const listed = stepsNow()
+    await plan({ advance: true })
+    const advanced = stepsNow()
+    await plan({ done: [2], start: 3 })
+    const outOfOrder = stepsNow()
+    await $.tool.call({ tool: 'mcp__ccd_turn__wrap_up', recap: 'listo' } as never)
+    const wrappedUp = stepsNow()
+    await $.turn.complete({ answer: 'listo', durationMs: 10, isAborted: false, turnId: 't1', reason: 'answer' })
+    const celebrating = stepsNow()
+    await clock.advance(5_000)
+    const resting = stepsNow()
+
+    // Assert
+    expect(listed).toEqual([
+      { content: 'Leer', status: 'in_progress' },
+      { content: 'Probar', status: 'pending' },
+      { content: 'Publicar', status: 'pending' },
+    ])
+    expect(advanced.map((s: { status: string }) => s.status)).toEqual(['completed', 'in_progress', 'pending'])
+    expect(outOfOrder.map((s: { status: string }) => s.status)).toEqual(['completed', 'completed', 'in_progress'])
+    expect(wrappedUp.map((s: { status: string }) => s.status)).toEqual(['completed', 'completed', 'completed'])
+    expect(celebrating).toHaveLength(3)
+    expect(resting).toBeUndefined()
+  })
+
+  test('a plan update with nothing listed before it leaves the window without steps', async ($, on) => {
+    // Arrange
+    mock.clock(on, { now: 1000 })
+    mock.env(on, { TEMP: 'C:\\Temp' })
+    const writes: string[] = []
+    on('session.start', (_$, e) => ({ cwd: e.cwd }))
+    on('session.id', () => ({ value: 'abc-123' }))
+    on('session.root', () => ({ value: 'C:\\repos\\my-project' }))
+    on('fs.write', (_$, e) => {
+      writes.push(e.text)
+      return { value: undefined }
+    })
+    on('tool.call', () => ({ result: 'ok' }))
+    await $.session.start({ cwd: 'C:\\repos\\my-project', surface: 'desktop', isInteractive: true })
+
+    // Act
+    await $.tool.call({ tool: 'mcp__ccd_turn__update_plan', advance: true } as never)
+
+    // Assert
+    expect(JSON.parse(writes.at(-1) ?? '{}').steps).toBeUndefined()
+  })
 })

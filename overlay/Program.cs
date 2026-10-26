@@ -194,6 +194,7 @@ public static class Program
                 PostArt(webView);
                 PostCharacter(webView, ReadSetting("character"));
                 PostCaption(webView, ReadSetting("caption"));
+                PostSteps(webView, AreStepsOn());
                 PostSizes(webView, ReadSizes());
                 PostSessions(webView);
                 break;
@@ -296,6 +297,13 @@ public static class Program
             }
         };
 
+        var steps = new MenuItem { Header = "Pasos", IsCheckable = true, IsChecked = AreStepsOn() };
+        steps.Click += (_, _) =>
+        {
+            SaveSetting("steps", steps.IsChecked);
+            PostSteps(webView, steps.IsChecked);
+        };
+
         var close = new MenuItem { Header = "Cerrar" };
         close.Click += (_, _) => window.Close();
 
@@ -305,6 +313,7 @@ public static class Program
         menu.Items.Add(show);
         menu.Items.Add(size);
         menu.Items.Add(sound);
+        menu.Items.Add(steps);
         menu.Items.Add(new Separator());
         menu.Items.Add(close);
         // Saved once the menu closes, not on every step of the slider.
@@ -423,6 +432,16 @@ public static class Program
     private static bool IsSoundOn()
     {
         return ReadJsonObject(_settingsFile)["sound"] is not JsonValue value || !value.TryGetValue<bool>(out var isOn) || isOn;
+    }
+
+    private static bool AreStepsOn()
+    {
+        return ReadJsonObject(_settingsFile)["steps"] is not JsonValue value || !value.TryGetValue<bool>(out var isOn) || isOn;
+    }
+
+    private static void PostSteps(WebView2CompositionControl webView, bool isOn)
+    {
+        webView.CoreWebView2?.PostWebMessageAsJson(new JsonObject { ["type"] = "steps", ["isOn"] = isOn }.ToJsonString());
     }
 
     private static void PostCharacter(WebView2CompositionControl webView, string? id)

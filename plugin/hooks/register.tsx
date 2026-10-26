@@ -1,11 +1,13 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register, Timer } from 'claude-code'
 
-import type { Mood, PetState } from '../types'
+import type { Mood, PetState, Step } from '../types'
 import { activityOf, failureOf } from './activity'
+import { stepsAfter } from './steps'
 
 const IDLE: PetState = { mood: 'idle', label: 'esperando' }
 const state = atom({ plugin: 'pet', key: 'state' } as const, IDLE)
+const steps = atom({ plugin: 'pet', key: 'steps' } as const, [] as readonly Step[])
 
 const CELEBRATE_MS = 4_000
 const SLEEP_AFTER_MS = 5 * 60_000
@@ -45,13 +47,18 @@ async function share($: EngineInterface, mood: Mood | 'gone', label: string, end
     const root = await $.session.root()
     const repo = root.split(/[\\/]/).filter(Boolean).at(-1) ?? root
     const updatedAt = await $.clock.now()
-    await $.fs.write(`${temp}\\claude-pet\\${sessionId}.json`, JSON.stringify({ sessionId, repo, mood, label, updatedAt }))
+    const list = mood === 'gone' ? [] : await read($, steps)
+    await $.fs.write(
+      `${temp}\\claude-pet\\${sessionId}.json`,
+      JSON.stringify({ sessionId, repo, mood, label, updatedAt, ...(list.length > 0 && { steps: list }) }),
+    )
   } catch {
     // The floating window is optional: a failed write must never break the band.
   }
 }
 
 async function rest($: EngineInterface) {
+  await update($, steps, () => [])
   await set($, IDLE)
   timer = $.clock.after(SLEEP_AFTER_MS, () => void set($, { mood: 'sleeping', label: 'durmiendo' }))
 }
@@ -103,7 +110,11 @@ export const register: Register = on => {
     const ran = await next(e)
     if (ran.isError === true) {
       await set($, failureOf(String(e.tool)))
-    } else if (activity.mood === 'browsing') {
+      return ran
+    }
+
+    await update($, steps, current => stepsAfter(current, String(e.tool), e))
+    if (activity.mood === 'browsing') {
       // Browser tools come in quick bursts: staying in browsing keeps the pet from flickering between them.
       await set($, { mood: 'browsing', label: 'navegando' })
     } else {

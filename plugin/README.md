@@ -7,6 +7,8 @@ Mod de Claude Code que sigue lo que hace Claude en cada sesión y se lo pasa a l
 | `turn.start` | pensando |
 | `tool.call` | editando / escribiendo / leyendo + nombre del archivo, buscando, navegando, delegando |
 | `tool.call` de Bash o PowerShell | corriendo tests, compilando, commiteando, pusheando, instalando o corriendo un comando, según el comando |
+| `tool.call` de la lista de tareas de la app (`mcp__ccd_turn__update_plan`) | guarda la lista y su avance (`items` la reemplaza; `advance`, `done` y `start` la mueven; `hooks/steps.ts`) para la burbuja de pasos de la ventana |
+| `tool.call` de `mcp__ccd_turn__wrap_up` | marca todos los pasos como hechos. La lista se borra cuando el bicho vuelve a esperando, 4 s después del fin del turno |
 | `tool.call` de `AskUserQuestion` o `ExitPlanMode` | estado `asking` mientras espera tu respuesta: te hace una pregunta / espera que apruebes el plan. En la ventana tiene la prioridad más alta |
 | una herramienta devuelve error | falló un comando / falló una herramienta, hasta la próxima herramienta |
 | `tool.call` de un navegador (Claude in Chrome, el navegador integrado de la app, Playwright) | estado `browsing`: haciendo clic, escribiendo en la página, leyendo la página, mirando la página, abriendo una página, … (`hooks/activity.ts`). Al terminar la herramienta queda en "navegando" hasta la próxima herramienta que no sea de navegador o el fin del turno, para que no parpadee entre clics |
@@ -23,6 +25,8 @@ En cada cambio de estado, el mod escribe `%TEMP%\claude-pet\<sessionId>.json`:
 ```json
 { "sessionId": "…", "repo": "my-project", "mood": "working", "label": "editando", "updatedAt": 1791543474000 }
 ```
+
+Mientras la sesión tiene una lista de tareas, el archivo lleva también `steps`, los pasos con su estado, como los muestra la app: `[{ "content": "Tests, validar y recarga", "status": "in_progress" }]` (`pending`, `in_progress` o `completed`). Sin lista, el campo no está.
 
 `repo` es el nombre de la carpeta raíz de la sesión. Al cerrar la sesión escribe `"mood": "gone"`. El mod pide el id de la sesión en cada escritura porque, tras un `/clear`, la sesión sigue con otro id sin disparar `session.start`.
 

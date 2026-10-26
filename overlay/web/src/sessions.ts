@@ -1,3 +1,5 @@
+import type { Step } from './steps'
+
 export type Mood = 'idle' | 'thinking' | 'working' | 'browsing' | 'asking' | 'happy' | 'sad' | 'sleeping'
 
 export type Session = {
@@ -7,6 +9,7 @@ export type Session = {
   label: string
   updatedAt: number
   title?: string
+  steps?: Step[]
 }
 
 export type CaptionMode = 'repo' | 'title'
