@@ -48,6 +48,7 @@ public static class Program
     // does not cut the music a tap started.
     private static MediaPlayer? _donePlayer;
     private static MediaPlayer? _pokePlayer;
+    private static Point? _anchor;
 
     [DllImport("user32.dll")]
     private static extern bool ReleaseCapture();
@@ -208,6 +209,11 @@ public static class Program
                 SavePosition(window);
                 break;
             case "size":
+                var anchor = new Point(root.GetProperty("anchorX").GetDouble(), root.GetProperty("anchorY").GetDouble());
+                var position = PetAnchor.WindowPositionFor(new Point(window.Left, window.Top), _anchor, anchor);
+                _anchor = anchor;
+                window.Left = position.X;
+                window.Top = position.Y;
                 window.Width = root.GetProperty("width").GetDouble();
                 window.Height = root.GetProperty("height").GetDouble();
                 break;
@@ -602,6 +608,11 @@ public static class Program
             {
                 window.Left = x;
                 window.Top = y;
+                // Saved with the bubble open or closed: the first size from the page moves the window to match.
+                if (saved?["anchorX"]?.GetValue<double>() is double anchorX && saved["anchorY"]?.GetValue<double>() is double anchorY)
+                {
+                    _anchor = new Point(anchorX, anchorY);
+                }
             }
         }
         catch (Exception exception) when (exception is IOException or JsonException or InvalidOperationException)
@@ -613,6 +624,12 @@ public static class Program
     private static void SavePosition(Window window)
     {
         Directory.CreateDirectory(_settingsFolder);
-        File.WriteAllText(_positionFile, new JsonObject { ["left"] = window.Left, ["top"] = window.Top }.ToJsonString());
+        File.WriteAllText(_positionFile, new JsonObject
+        {
+            ["left"] = window.Left,
+            ["top"] = window.Top,
+            ["anchorX"] = _anchor?.X,
+            ["anchorY"] = _anchor?.Y,
+        }.ToJsonString());
     }
 }

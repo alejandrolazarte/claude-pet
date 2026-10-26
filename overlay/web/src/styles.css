@@ -70,12 +70,31 @@ body {
   cursor: pointer;
 }
 
-/* Above the figure, inside .pet: centered over the character at any size, with the tail pointing at it. */
+/* Above the figure, inside .pet: centered over the character at any size, with the tail pointing at it. The bubble
+   sits at the bottom of a room that is always there, with room for about twelve one-line steps; more are cut. */
+.steps-room {
+  position: relative;
+  width: 240px;
+  height: 250px;
+}
+
+.steps-room .steps-bubble {
+  position: absolute;
+  left: 0;
+  bottom: 12px;
+  transform-origin: 50% 100%;
+}
+
+/* On the list, not the bubble: the tail hangs outside the bubble's box. */
+.steps-room .steps-bubble ol {
+  max-height: 200px;
+  overflow: hidden;
+}
+
 .steps-bubble {
   position: relative;
   box-sizing: border-box;
   width: 240px;
-  margin-bottom: 12px;
   padding: 7px 10px 8px;
   border: 1px solid #d97757;
   border-radius: 14px;
