@@ -62,6 +62,14 @@ public static class Program
     [DllImport("user32.dll")]
     private static extern bool GetWindowRect(IntPtr hWnd, out NativeRect rect);
 
+    [DllImport("user32.dll")]
+    private static extern IntPtr MonitorFromPoint(NativePoint point, uint flags);
+
+    [DllImport("user32.dll")]
+    private static extern bool GetMonitorInfo(IntPtr monitor, ref MonitorInfo info);
+
+    private const uint _monitorDefaultToNearest = 2;
+
     [StructLayout(LayoutKind.Sequential)]
     private struct NativePoint
     {
@@ -76,6 +84,15 @@ public static class Program
         public int Top;
         public int Right;
         public int Bottom;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MonitorInfo
+    {
+        public int Size;
+        public NativeRect Monitor;
+        public NativeRect Work;
+        public uint Flags;
     }
 
     [STAThread]
@@ -210,12 +227,17 @@ public static class Program
                 break;
             case "size":
                 var anchor = new Point(root.GetProperty("anchorX").GetDouble(), root.GetProperty("anchorY").GetDouble());
-                var position = PetAnchor.WindowPositionFor(new Point(window.Left, window.Top), _anchor, anchor);
+                var size = new Size(root.GetProperty("width").GetDouble(), root.GetProperty("height").GetDouble());
+                var moved = PetAnchor.WindowPositionFor(new Point(window.Left, window.Top), _anchor, anchor);
+                // Before the first size the bare window holds only the character, at its top-left.
+                var character = new Point(window.Left + (_anchor?.X ?? 0), window.Top + (_anchor?.Y ?? 0));
+                // A character that grows while it loads, or the bubble room, would hang off the edge of the screen.
+                var position = WindowPlacement.Inside(WorkAreaOf(window, character), moved, size);
                 _anchor = anchor;
                 window.Left = position.X;
                 window.Top = position.Y;
-                window.Width = root.GetProperty("width").GetDouble();
-                window.Height = root.GetProperty("height").GetDouble();
+                window.Width = size.Width;
+                window.Height = size.Height;
                 break;
             case "done":
                 PlayDoneSound(root.TryGetProperty("character", out var done) ? done.GetString() : null);
@@ -587,38 +609,47 @@ public static class Program
 
     private static void PlaceWindow(Window window)
     {
-        var area = SystemParameters.WorkArea;
-        window.Left = area.Right - window.Width - 24;
-        window.Top = area.Bottom - window.Height - 24;
-
-        if (!File.Exists(_positionFile))
-        {
-            return;
-        }
-
+        string? saved = null;
         try
         {
-            var saved = JsonNode.Parse(File.ReadAllText(_positionFile));
-            var left = saved?["left"]?.GetValue<double>();
-            var top = saved?["top"]?.GetValue<double>();
-            var screen = new Rect(
-                SystemParameters.VirtualScreenLeft, SystemParameters.VirtualScreenTop,
-                SystemParameters.VirtualScreenWidth, SystemParameters.VirtualScreenHeight);
-            if (left is double x && top is double y && screen.Contains(new Point(x + 20, y + 20)))
+            if (File.Exists(_positionFile))
             {
-                window.Left = x;
-                window.Top = y;
-                // Saved with the bubble open or closed: the first size from the page moves the window to match.
-                if (saved?["anchorX"]?.GetValue<double>() is double anchorX && saved["anchorY"]?.GetValue<double>() is double anchorY)
-                {
-                    _anchor = new Point(anchorX, anchorY);
-                }
+                saved = File.ReadAllText(_positionFile);
             }
         }
-        catch (Exception exception) when (exception is IOException or JsonException or InvalidOperationException)
+        catch (IOException)
         {
-            // A broken position file falls back to the bottom-right corner.
+            // An unreadable position file falls back to the bottom-right corner.
         }
+
+        var screen = new Rect(
+            SystemParameters.VirtualScreenLeft, SystemParameters.VirtualScreenTop,
+            SystemParameters.VirtualScreenWidth, SystemParameters.VirtualScreenHeight);
+        var (position, anchor) = WindowPlacement.For(SystemParameters.WorkArea, screen, new Size(window.Width, window.Height), saved);
+        window.Left = position.X;
+        window.Top = position.Y;
+        _anchor = anchor;
+    }
+
+    // SystemParameters.WorkArea is only the primary monitor. The character picks the monitor, not the window: the
+    // bubble room can reach into the next one.
+    private static Rect WorkAreaOf(Window window, Point character)
+    {
+        if (PresentationSource.FromVisual(window)?.CompositionTarget is not { } target)
+        {
+            return SystemParameters.WorkArea;
+        }
+
+        var device = target.TransformToDevice.Transform(character);
+        var info = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>() };
+        if (!GetMonitorInfo(MonitorFromPoint(new NativePoint { X = (int)device.X, Y = (int)device.Y }, _monitorDefaultToNearest), ref info))
+        {
+            return SystemParameters.WorkArea;
+        }
+
+        return new Rect(
+            target.TransformFromDevice.Transform(new Point(info.Work.Left, info.Work.Top)),
+            target.TransformFromDevice.Transform(new Point(info.Work.Right, info.Work.Bottom)));
     }
 
     private static void SavePosition(Window window)
